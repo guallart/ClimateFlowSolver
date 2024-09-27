@@ -74,12 +74,21 @@ fn main() {
         points: data,
         x_min: 10.0,
         y_min: 10.0,
-        x_res: 0.01,
-        y_res: 0.01,
+        x_res: 0.1,
+        y_res: 0.1,
         x_size: ncols,
         y_size: nrows,
+        x_max: 10.0 * 0.1 * (ncols as f64),
+        y_max: 10.0 * 0.1 * (nrows as f64),
     };
 
-    let triangles = stl::triangulate_grid(&grid);
+    let triangles = grid.triangulate(&grid);
     stl::write(triangles, "mesh.stl").expect("Could not write stl to file");
+
+    let (north, south, east, west, sky) = stl::make_walls(&grid, 20.0);
+    stl::write(north, "north.stl").expect("Could not write stl to file");
+    stl::write(south, "south.stl").expect("Could not write stl to file");
+    stl::write(east, "west.stl").expect("Could not write stl to file");
+    stl::write(west, "east.stl").expect("Could not write stl to file");
+    stl::write(sky, "sky.stl").expect("Could not write stl to file");
 }

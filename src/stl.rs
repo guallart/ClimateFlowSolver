@@ -1,4 +1,4 @@
-use ndarray::Array2;
+use ndarray::{s, Array2};
 use std::fs::File;
 use std::io::Write;
 
@@ -7,6 +7,12 @@ pub struct Vector {
     x: f64,
     y: f64,
     z: f64,
+}
+
+impl Vector {
+    fn new(x: f64, y: f64, z: f64) -> Vector {
+        Vector { x, y, z }
+    }
 }
 
 pub struct Triangle {
@@ -53,6 +59,8 @@ pub struct Grid {
     pub points: Array2<f64>,
     pub x_min: f64,
     pub y_min: f64,
+    pub x_max: f64,
+    pub y_max: f64,
     pub x_res: f64,
     pub y_res: f64,
     pub x_size: usize,
@@ -60,29 +68,51 @@ pub struct Grid {
 }
 
 impl Grid {
-    fn get_xyz(&self, i: usize, j: usize) -> Vector {
+    pub fn x(&self, col: usize) -> f64 {
+        self.x_min + self.x_res * (col * self.x_size) as f64
+    }
+
+    pub fn y(&self, row: usize) -> f64 {
+        self.y_min + self.y_res * (row * self.y_size) as f64
+    }
+
+    pub fn xyz(&self, i: usize, j: usize) -> Vector {
         Vector {
-            x: self.x_min + self.x_res * (i * self.x_size) as f64,
-            y: self.y_min + self.y_res * (j * self.y_size) as f64,
+            x: self.x(i),
+            y: self.y(j),
             z: self.points[[i, j]],
         }
     }
+
+    pub fn triangulate(&self, terrain: &Grid) -> Vec<Triangle> {
+        let mut triangles = Vec::new();
+        let (rows, cols) = terrain.points.dim();
+
+        for r in 0..rows - 1 {
+            for c in 0..cols - 1 {
+                let v1 = terrain.xyz(c, r);
+                let v2 = terrain.xyz(c + 1, r);
+                let v3 = terrain.xyz(c, r + 1);
+                let v4 = terrain.xyz(c + 1, r + 1);
+
+                triangles.push(Triangle::new(&v1, &v2, &v3));
+                triangles.push(Triangle::new(&v2, &v3, &v4));
+            }
+        }
+
+        triangles
+    }
 }
 
-pub fn triangulate_grid(terrain: &Grid) -> Vec<Triangle> {
-    let mut triangles = Vec::new();
-    let (rows, cols) = terrain.points.dim();
+fn make_single_wall(limit: &Vec<Vector>, z_upper: f64) -> Vec<Triangle> {
+    let mut triangles: Vec<Triangle> = Vec::new();
 
-    for r in 0..rows - 1 {
-        for c in 0..cols - 1 {
-            let v1 = terrain.get_xyz(c, r);
-            let v2 = terrain.get_xyz(c + 1, r);
-            let v3 = terrain.get_xyz(c, r + 1);
-            let v4 = terrain.get_xyz(c + 1, r + 1);
-
-            triangles.push(Triangle::new(&v1, &v2, &v3));
-            triangles.push(Triangle::new(&v2, &v3, &v4));
-        }
+    for window in limit.windows(2) {
+        let (v1, v2) = (window[0], window[1]);
+        let v3 = Vector::new(v1.x, v1.y, z_upper);
+        let v4 = Vector::new(v2.x, v2.y, z_upper);
+        triangles.push(Triangle::new(&v1, &v2, &v3));
+        triangles.push(Triangle::new(&v2, &v4, &v3));
     }
 
     triangles
@@ -98,18 +128,57 @@ pub fn make_walls(
     Vec<Triangle>,
     Vec<Triangle>,
 ) {
-    let mut north: Vec<Triangle> = Vec::new();
-    let mut south: Vec<Triangle> = Vec::new();
-    let mut east: Vec<Triangle> = Vec::new();
-    let mut west: Vec<Triangle> = Vec::new();
+    let height = max_heigh
+        + terrain
+            .points
+            .iter()
+            .filter(|&x| !x.is_nan()) // Filtrar valores NaN
+            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .unwrap();
+
+    let z_north = terrain.points.slice(s![0, ..]).into_iter();
+    let z_south = terrain.points.slice(s![-1, ..]).into_iter();
+    let z_west = terrain.points.slice(s![.., 0]).into_iter();
+    let z_east = terrain.points.slice(s![.., -1]).into_iter();
+
+    let mut points_north = z_north
+        .enumerate()
+        .map(|(xi, z)| Vector::new(terrain.x(xi), terrain.x_max, *z))
+        .collect::<Vec<Vector>>();
+
+    let mut points_south = z_south
+        .enumerate()
+        .map(|(xi, z)| Vector::new(terrain.x(xi), terrain.x_min, *z))
+        .collect::<Vec<Vector>>();
+
+    let mut points_west = z_west
+        .enumerate()
+        .map(|(yi, z)| Vector::new(terrain.x_min, terrain.y(yi), *z))
+        .collect::<Vec<Vector>>();
+
+    let mut points_east = z_east
+        .enumerate()
+        .map(|(yi, z)| Vector::new(terrain.x_max, terrain.y(yi), *z))
+        .collect::<Vec<Vector>>();
+
+    points_north.sort_by(|a, b| a.x.partial_cmp(&b.x).unwrap());
+    points_south.sort_by(|a, b| a.x.partial_cmp(&b.x).unwrap());
+    points_west.sort_by(|a, b| a.y.partial_cmp(&b.y).unwrap());
+    points_east.sort_by(|a, b| a.y.partial_cmp(&b.y).unwrap());
+
+    let north = make_single_wall(&points_north, height);
+    let south = make_single_wall(&points_south, height);
+    let west = make_single_wall(&points_west, height);
+    let east = make_single_wall(&points_east, height);
+
+    let nw = Vector::new(terrain.x_min, terrain.y_min, height);
+    let ne = Vector::new(terrain.x_min, terrain.y_max, height);
+    let sw = Vector::new(terrain.x_max, terrain.y_min, height);
+    let se = Vector::new(terrain.x_max, terrain.y_max, height);
+
     let mut sky: Vec<Triangle> = Vec::new();
-
-    let sw_up = terrain.get_xyz(0, 0);
-    let nw_up = terrain.get_xyz(0, terrain.y_size - 1);
-    let ne_up = terrain.get_xyz(terrain.x_size - 1, 0);
-    let se_up = terrain.get_xyz(terrain.x_size - 1, terrain.y_size - 1);
-
-    todo!();
+    sky.push(Triangle::new(&nw, &se, &sw));
+    sky.push(Triangle::new(&nw, &ne, &se));
 
     (north, south, east, west, sky)
 }
