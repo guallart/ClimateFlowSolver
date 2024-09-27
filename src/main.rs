@@ -58,7 +58,7 @@ fn main() {
     )
     .unwrap();
 
-    let (nrows, ncols) = data.dim();
+    let (ncols, nrows) = data.dim();
 
     let grid = stl::Grid {
         points: data,

@@ -74,11 +74,11 @@ impl Grid {
         self.y_min + self.y_res * (row as f64)
     }
 
-    pub fn xyz(&self, i: usize, j: usize) -> Vector {
+    pub fn xyz(&self, col: usize, row: usize) -> Vector {
         Vector {
-            x: self.x(i),
-            y: self.y(j),
-            z: self.points[[i, j]],
+            x: self.x(col),
+            y: self.y(row),
+            z: self.points[[col, row]],
         }
     }
 
