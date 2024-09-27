@@ -1,6 +1,6 @@
 use ndarray::{s, Array2};
-use std::fs::File;
 use std::io::Write;
+use std::{clone, fs::File};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Vector {
@@ -56,7 +56,7 @@ impl Triangle {
 }
 
 pub struct Grid {
-    pub points: Array2<f64>,
+    pub elevations: Array2<f64>,
     pub x_min: f64,
     pub y_min: f64,
     pub x_max: f64,
@@ -78,13 +78,13 @@ impl Grid {
         Vector {
             x: self.x(col),
             y: self.y(row),
-            z: self.points[[col, row]],
+            z: self.elevations[[col, row]],
         }
     }
 
     pub fn triangulate(&self) -> Vec<Triangle> {
         let mut triangles = Vec::new();
-        let (cols, rows) = self.points.dim();
+        let (cols, rows) = self.elevations.dim();
 
         for c in 0..cols - 1 {
             for r in 0..rows - 1 {
@@ -127,14 +127,14 @@ impl Grid {
     ) {
         let height = max_heigh
             + self
-                .points
+                .elevations
                 .iter()
                 .filter(|&x| !x.is_nan())
                 .max_by(|a, b| a.partial_cmp(b).unwrap())
                 .unwrap();
 
         let points_north = self
-            .points
+            .elevations
             .slice(s![.., -1])
             .into_iter()
             .enumerate()
@@ -142,7 +142,7 @@ impl Grid {
             .collect::<Vec<Vector>>();
 
         let points_south = self
-            .points
+            .elevations
             .slice(s![.., 0])
             .into_iter()
             .enumerate()
@@ -150,7 +150,7 @@ impl Grid {
             .collect::<Vec<Vector>>();
 
         let points_west = self
-            .points
+            .elevations
             .slice(s![0, ..])
             .into_iter()
             .enumerate()
@@ -158,7 +158,7 @@ impl Grid {
             .collect::<Vec<Vector>>();
 
         let points_east = self
-            .points
+            .elevations
             .slice(s![-1, ..])
             .into_iter()
             .enumerate()
@@ -181,6 +181,63 @@ impl Grid {
 
         (north, south, west, east, sky)
     }
+
+    pub fn from_tiff(path_tiff: &str) -> Result<Grid, Box<dyn std::error::Error>> {
+        todo!();
+        // let file_tiff = File::open(path_tiff)?;
+        // let mut decoder = Decoder::new(file_tiff)?;
+        // let (cols, rows) = decoder.dimensions()?;
+        // let image_data = decoder.read_image()?;
+
+        // let data = match image_data {
+        //     DecodingResult::F32(data) => data.iter().map(|x| *x as f64).collect(),
+        //     DecodingResult::F64(data) => data,
+        //     _ => panic!("Unsoported tiff format"),
+        // };
+
+        // let z = decoder.get_tag_f64(tiff::tags::Tag::MinSampleValue)?;
+        // println!("{}", z);
+
+        // let mut x_coords: Vec<f64> = Vec::new();
+        // let mut y_coords: Vec<f64> = Vec::new();
+        // let mut z_coords: Vec<f64> = Vec::new();
+
+        // data.chunks(3).for_each(|chunk| {
+        //     let (x, y, z) = (chunk[0], chunk[1], chunk[2]);
+        //     x_coords.push(x);
+        //     y_coords.push(y);
+        //     z_coords.push(z);
+        // });
+
+        // let elevations = Array2::from_shape_vec((rows as usize, cols as usize), z_coords)?;
+        // let (x_min, x_max, x_res) = min_max_res(&x_coords);
+        // let (y_min, y_max, y_res) = min_max_res(&y_coords);
+
+        // let grid = Grid {
+        //     elevations,
+        //     x_min,
+        //     y_min,
+        //     x_max,
+        //     y_max,
+        //     x_res,
+        //     y_res,
+        // };
+
+        // Ok(grid)
+    }
+}
+
+fn min_max_res(values: &[f64]) -> (f64, f64, f64) {
+    let max_value = values.iter().fold(f64::NEG_INFINITY, |a, &b| a.max(b));
+    let min_value = values.iter().fold(f64::INFINITY, |a, &b| a.min(b));
+
+    let spacing = if values.len() > 1 {
+        values[1] - values[0]
+    } else {
+        0.0
+    };
+
+    (min_value, max_value, spacing)
 }
 
 pub fn write(triangles: Vec<Triangle>, file_name: &str) -> Result<(), std::io::Error> {
