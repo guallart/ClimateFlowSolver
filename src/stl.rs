@@ -135,7 +135,7 @@ impl Grid {
 
         let points_north = self
             .points
-            .slice(s![-1, ..])
+            .slice(s![.., -1])
             .into_iter()
             .enumerate()
             .map(|(i, z)| Vector::new(self.x(i), self.y_max, *z))
@@ -143,7 +143,7 @@ impl Grid {
 
         let points_south = self
             .points
-            .slice(s![0, ..])
+            .slice(s![.., 0])
             .into_iter()
             .enumerate()
             .map(|(i, z)| Vector::new(self.x(i), self.y_min, *z))
@@ -151,7 +151,7 @@ impl Grid {
 
         let points_west = self
             .points
-            .slice(s![.., 0])
+            .slice(s![0, ..])
             .into_iter()
             .enumerate()
             .map(|(j, z)| Vector::new(self.x_min, self.y(j), *z))
@@ -159,7 +159,7 @@ impl Grid {
 
         let points_east = self
             .points
-            .slice(s![.., -1])
+            .slice(s![-1, ..])
             .into_iter()
             .enumerate()
             .map(|(j, z)| Vector::new(self.x_max, self.y(j), *z))
