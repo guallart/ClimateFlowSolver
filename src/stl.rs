@@ -1,22 +1,17 @@
+use ndarray::Array2;
 use std::fs::File;
 use std::io::Write;
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Vector {
-    x: f32,
-    y: f32,
-    z: f32,
+    x: f64,
+    y: f64,
+    z: f64,
 }
 
 pub struct Triangle {
     normal: Vector,
     vertices: [Vector; 3],
-}
-
-impl Vector {
-    pub fn new(x: f32, y: f32, z: f32) -> Vector {
-        Vector { x, y, z }
-    }
 }
 
 pub fn compute_normal(v1: &Vector, v2: &Vector, v3: &Vector) -> Vector {
@@ -45,34 +40,83 @@ pub fn compute_normal(v1: &Vector, v2: &Vector, v3: &Vector) -> Vector {
     }
 }
 
-pub fn from_vertices(vertices: Vec<Vector>) -> Vec<Triangle> {
-    // TODO: change this function to create stl from grid and limit walls
-    let mut triangles = Vec::new();
-
-    for chunk in vertices.chunks(3) {
-        if chunk.len() != 3 {
-            continue;
+impl Triangle {
+    fn new(v1: &Vector, v2: &Vector, v3: &Vector) -> Triangle {
+        Triangle {
+            vertices: [v1.clone(), v2.clone(), v3.clone()],
+            normal: compute_normal(v1, v2, v3),
         }
-
-        let v1 = chunk[0].clone();
-        let v2 = chunk[1].clone();
-        let v3 = chunk[2].clone();
-
-        let normal = compute_normal(&v1, &v2, &v3);
-
-        let triangle = Triangle {
-            normal,
-            vertices: [v1, v2, v3],
-        };
-
-        triangles.push(triangle);
     }
+}
+
+pub struct Grid {
+    points: Array2<f64>,
+    x_min: f64,
+    y_min: f64,
+    x_res: f64,
+    y_res: f64,
+    x_size: usize,
+    y_size: usize,
+}
+
+impl Grid {
+    fn get_xyz(&self, i: usize, j: usize) -> Vector {
+        Vector {
+            x: self.x_min + (i * self.x_size) as f64,
+            y: self.y_min + (j * self.y_size) as f64,
+            z: self.points[[i, j]],
+        }
+    }
+}
+
+pub fn triangulate_grid(terrain: &Grid) -> Vec<Triangle> {
+    let mut triangles = Vec::new();
+    let (rows, cols) = terrain.points.dim();
+
+    for r in 0..rows - 1 {
+        for c in 0..cols - 1 {
+            let v1 = terrain.get_xyz(c, r);
+            let v2 = terrain.get_xyz(c + 1, r);
+            let v3 = terrain.get_xyz(c, r + 1);
+            let v4 = terrain.get_xyz(c + 1, r + 1);
+
+            triangles.push(Triangle::new(&v1, &v2, &v3));
+            triangles.push(Triangle::new(&v2, &v3, &v4));
+        }
+    }
+
     triangles
+}
+
+pub fn make_walls(
+    terrain: &Grid,
+    max_heigh: f64,
+) -> (
+    Vec<Triangle>,
+    Vec<Triangle>,
+    Vec<Triangle>,
+    Vec<Triangle>,
+    Vec<Triangle>,
+) {
+    let mut north: Vec<Triangle> = Vec::new();
+    let mut south: Vec<Triangle> = Vec::new();
+    let mut east: Vec<Triangle> = Vec::new();
+    let mut west: Vec<Triangle> = Vec::new();
+    let mut sky: Vec<Triangle> = Vec::new();
+
+    let sw_up = terrain.get_xyz(0, 0);
+    let nw_up = terrain.get_xyz(0, terrain.y_size - 1);
+    let ne_up = terrain.get_xyz(terrain.x_size - 1, 0);
+    let se_up = terrain.get_xyz(terrain.x_size - 1, terrain.y_size - 1);
+
+    todo!();
+
+    (north, south, east, west, sky)
 }
 
 pub fn write(triangles: Vec<Triangle>, file_name: &str) -> Result<(), std::io::Error> {
     let mut stl_file = File::create(file_name)?;
-    writeln!(stl_file, "solid mesh")?;
+    writeln!(stl_file, "solid Vec<Triangle>")?;
     for triangle in triangles {
         writeln!(
             stl_file,
@@ -90,7 +134,7 @@ pub fn write(triangles: Vec<Triangle>, file_name: &str) -> Result<(), std::io::E
         writeln!(stl_file, "    endloop")?;
         writeln!(stl_file, "  endfacet")?;
     }
-    writeln!(stl_file, "endsolid mesh")?;
+    writeln!(stl_file, "endsolid Vec<Triangle>")?;
 
     Ok(())
 }
