@@ -68,6 +68,18 @@ fn main() {
     )
     .unwrap();
 
-    let triangles = stl::triangulate_array(&data);
+    let (nrows, ncols) = data.dim();
+
+    let grid = stl::Grid {
+        points: data,
+        x_min: 10.0,
+        y_min: 10.0,
+        x_res: 0.01,
+        y_res: 0.01,
+        x_size: ncols,
+        y_size: nrows,
+    };
+
+    let triangles = stl::triangulate_grid(&grid);
     stl::write(triangles, "mesh.stl").expect("Could not write stl to file");
 }

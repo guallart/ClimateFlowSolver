@@ -50,20 +50,20 @@ impl Triangle {
 }
 
 pub struct Grid {
-    points: Array2<f64>,
-    x_min: f64,
-    y_min: f64,
-    x_res: f64,
-    y_res: f64,
-    x_size: usize,
-    y_size: usize,
+    pub points: Array2<f64>,
+    pub x_min: f64,
+    pub y_min: f64,
+    pub x_res: f64,
+    pub y_res: f64,
+    pub x_size: usize,
+    pub y_size: usize,
 }
 
 impl Grid {
     fn get_xyz(&self, i: usize, j: usize) -> Vector {
         Vector {
-            x: self.x_min + (i * self.x_size) as f64,
-            y: self.y_min + (j * self.y_size) as f64,
+            x: self.x_min + self.x_res * (i * self.x_size) as f64,
+            y: self.y_min + self.y_res * (j * self.y_size) as f64,
             z: self.points[[i, j]],
         }
     }
