@@ -1,0 +1,100 @@
+solid Vec<Triangle>
+  facet normal 0.000000 -1.000000 0.000000
+    outer loop
+      vertex 0.000000 0.000000 0.417636
+      vertex 1.100000 0.000000 0.454552
+      vertex 0.000000 0.000000 2.994913
+    endloop
+  endfacet
+  facet normal 0.000000 -1.000000 0.000000
+    outer loop
+      vertex 1.100000 0.000000 0.454552
+      vertex 1.100000 0.000000 2.994913
+      vertex 0.000000 0.000000 2.994913
+    endloop
+  endfacet
+  facet normal 0.000000 -1.000000 0.000000
+    outer loop
+      vertex 1.100000 0.000000 0.454552
+      vertex 2.200000 0.000000 0.328034
+      vertex 1.100000 0.000000 2.994913
+    endloop
+  endfacet
+  facet normal 0.000000 -1.000000 0.000000
+    outer loop
+      vertex 2.200000 0.000000 0.328034
+      vertex 2.200000 0.000000 2.994913
+      vertex 1.100000 0.000000 2.994913
+    endloop
+  endfacet
+  facet normal 0.000000 -1.000000 0.000000
+    outer loop
+      vertex 2.200000 0.000000 0.328034
+      vertex 3.300000 0.000000 0.245104
+      vertex 2.200000 0.000000 2.994913
+    endloop
+  endfacet
+  facet normal 0.000000 -1.000000 0.000000
+    outer loop
+      vertex 3.300000 0.000000 0.245104
+      vertex 3.300000 0.000000 2.994913
+      vertex 2.200000 0.000000 2.994913
+    endloop
+  endfacet
+  facet normal 0.000000 -1.000000 0.000000
+    outer loop
+      vertex 3.300000 0.000000 0.245104
+      vertex 4.400000 0.000000 0.170867
+      vertex 3.300000 0.000000 2.994913
+    endloop
+  endfacet
+  facet normal 0.000000 -1.000000 0.000000
+    outer loop
+      vertex 4.400000 0.000000 0.170867
+      vertex 4.400000 0.000000 2.994913
+      vertex 3.300000 0.000000 2.994913
+    endloop
+  endfacet
+  facet normal 0.000000 -1.000000 0.000000
+    outer loop
+      vertex 4.400000 0.000000 0.170867
+      vertex 5.500000 0.000000 0.220849
+      vertex 4.400000 0.000000 2.994913
+    endloop
+  endfacet
+  facet normal 0.000000 -1.000000 0.000000
+    outer loop
+      vertex 5.500000 0.000000 0.220849
+      vertex 5.500000 0.000000 2.994913
+      vertex 4.400000 0.000000 2.994913
+    endloop
+  endfacet
+  facet normal 0.000000 -1.000000 0.000000
+    outer loop
+      vertex 5.500000 0.000000 0.220849
+      vertex 6.600000 0.000000 0.976941
+      vertex 5.500000 0.000000 2.994913
+    endloop
+  endfacet
+  facet normal 0.000000 -1.000000 0.000000
+    outer loop
+      vertex 6.600000 0.000000 0.976941
+      vertex 6.600000 0.000000 2.994913
+      vertex 5.500000 0.000000 2.994913
+    endloop
+  endfacet
+  facet normal 0.000000 -1.000000 0.000000
+    outer loop
+      vertex 6.600000 0.000000 0.976941
+      vertex 7.700000 0.000000 0.326367
+      vertex 6.600000 0.000000 2.994913
+    endloop
+  endfacet
+  facet normal 0.000000 -1.000000 0.000000
+    outer loop
+      vertex 7.700000 0.000000 0.326367
+      vertex 7.700000 0.000000 2.994913
+      vertex 6.600000 0.000000 2.994913
+    endloop
+  endfacet
+endsolid Vec<Triangle>
