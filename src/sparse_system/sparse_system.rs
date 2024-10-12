@@ -1,4 +1,4 @@
-use crate::sparse_matrix::SparseMatrix;
+use crate::sparse_system::sparse_matrix::SparseMatrix;
 use rayon::prelude::*;
 use std::time::{Duration, Instant};
 

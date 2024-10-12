@@ -1,7 +1,10 @@
-use core::f64;
 use itertools::izip;
 use rand::Rng;
+use rayon::iter::IntoParallelRefIterator;
+use rayon::iter::ParallelIterator;
 use std::fmt;
+use std::fs::File;
+use std::io::{BufRead, BufReader, BufWriter, Write};
 
 type SparseEntry = (usize, usize, f64);
 
@@ -10,19 +13,67 @@ pub struct SparseMatrix {
     pub entries: Vec<SparseEntry>,
     pub n_rows: usize,
     pub n_cols: usize,
+    pub row_indices: Vec<Option<(usize, usize)>>,
 }
 
 impl SparseMatrix {
     #[allow(dead_code)]
-    pub fn new() -> Self {
+    pub fn new(estimated_entries_count: usize) -> Self {
         SparseMatrix {
-            entries: Vec::new(),
+            entries: Vec::with_capacity(estimated_entries_count),
             n_rows: 0,
             n_cols: 0,
+            row_indices: Vec::new(),
         }
     }
 
-    pub fn random(n_rows: usize, n_entries: usize) -> SparseMatrix {
+    pub fn compute_size(&mut self) {
+        for (row, col, _val) in self.entries.iter() {
+            self.n_rows = self.n_rows.max(row + 1);
+            self.n_cols = self.n_cols.max(col + 1);
+        }
+    }
+
+    pub fn sort_entries(&mut self) {
+        self.entries.sort_by(|a, b| {
+            let cmp = a.0.cmp(&b.0);
+            if cmp == std::cmp::Ordering::Equal {
+                a.1.cmp(&b.1)
+            } else {
+                cmp
+            }
+        });
+    }
+
+    pub fn compute_row_indices(&mut self) {
+        // Assume entries are sorted
+        self.row_indices = vec![None; self.n_rows];
+
+        let mut current_row = 0;
+        let mut start_index = 0;
+
+        for (i, &(row, _, _)) in self.entries.iter().enumerate() {
+            if i == 0 {
+                continue;
+            }
+
+            if current_row != row {
+                self.row_indices[current_row] = Some((start_index, i - 1));
+                current_row = row;
+                start_index = i;
+            }
+        }
+
+        self.row_indices[current_row] = Some((start_index, self.entries.len() - 1));
+    }
+
+    pub fn preprocess(&mut self) {
+        self.compute_size();
+        self.sort_entries();
+        self.compute_row_indices();
+    }
+
+    pub fn random(n_rows: usize, n_entries: usize, force_diagonal: bool) -> SparseMatrix {
         let mut rng = rand::thread_rng();
 
         let mut indices: Vec<(usize, usize)> = (0..n_entries)
@@ -30,8 +81,10 @@ impl SparseMatrix {
             .filter(|(r, c)| *r != *c)
             .collect();
 
-        for i in 0..n_rows {
-            indices.push((i, i));
+        if force_diagonal {
+            for i in 0..n_rows {
+                indices.push((i, i));
+            }
         }
 
         let values: Vec<f64> = indices
@@ -50,44 +103,52 @@ impl SparseMatrix {
         SparseMatrix::from_vecs(&rows, &cols, &values)
     }
 
+    pub fn random_vec_like(&self) -> Vec<f64> {
+        let mut rng = rand::thread_rng();
+        (0..self.n_rows)
+            .map(|_| rng.gen::<f64>() * 2.0 - 1.0)
+            .collect()
+    }
+
     pub fn from_vecs(rows: &Vec<usize>, cols: &Vec<usize>, values: &Vec<f64>) -> SparseMatrix {
+        let entries = izip!(rows, cols, values)
+            .map(|(row, col, val)| (*row, *col, *val))
+            .collect();
+
         let mut matrix = SparseMatrix {
-            entries: Vec::with_capacity(rows.len()),
+            entries,
             n_rows: 0,
             n_cols: 0,
+            row_indices: Vec::new(),
         };
-        matrix.add_from_vecs(rows, cols, values);
-        matrix.sort_entries();
+
+        matrix.preprocess();
         matrix
     }
 
-    pub fn add_entry(&mut self, row: usize, col: usize, value: f64) {
-        self.entries.push((row, col, value));
-
-        if self.n_rows == 0 {
-            self.n_rows = row + 1;
-            return;
+    pub fn dot_par(&self, x: &[f64]) -> Result<Vec<f64>, String> {
+        if self.n_rows != x.len() {
+            return Err(format!(
+                "Cannot multiply a {}x{} matrix with a {}x1 vector",
+                self.n_rows,
+                self.n_rows,
+                x.len()
+            ));
         }
 
-        if row + 1 > self.n_rows {
-            self.n_rows = row + 1;
-        }
+        let b = self
+            .row_indices
+            .par_iter()
+            .map(|maybe_range| match maybe_range {
+                Some((a, b)) => (*a..=*b)
+                    .map(|i| self.entries[i].2 * x[self.entries[i].1])
+                    .sum(),
+                None => 0.0,
+            })
+            .collect();
 
-        if col + 1 > self.n_cols {
-            self.n_cols = col + 1;
-        }
+        Ok(b)
     }
-
-    pub fn sort_entries(&mut self) {
-        self.entries.sort_by(|ent1, ent2| ent1.0.cmp(&ent2.0));
-    }
-
-    pub fn add_from_vecs(&mut self, rows: &Vec<usize>, cols: &Vec<usize>, values: &Vec<f64>) {
-        for (row, col, value) in izip!(rows, cols, values) {
-            self.add_entry(*row, *col, *value);
-        }
-    }
-
     pub fn dot(&self, x: &[f64]) -> Result<Vec<f64>, String> {
         if self.n_rows != x.len() {
             return Err(format!(
@@ -108,31 +169,6 @@ impl SparseMatrix {
         Ok(b)
     }
 
-    // pub fn dot_iter<'a>(&'a self, x: &'a [f64]) -> impl Iterator<Item = f64> + 'a {
-    //     // Assume entries are sorted by row number
-    //     let mut entry_iter = self.entries.iter().peekable();
-    //     let mut current_row = 0;
-
-    //     std::iter::from_fn(move || {
-    //         if current_row >= self.n_rows {
-    //             return None;
-    //         }
-
-    //         let mut sum = 0.0;
-    //         while let Some(&(row, col, value)) = entry_iter.peek() {
-    //             if *row == current_row {
-    //                 sum += x[*col] * value;
-    //                 entry_iter.next();
-    //             } else {
-    //                 break;
-    //             }
-    //         }
-
-    //         current_row += 1;
-    //         Some(sum)
-    //     })
-    // }
-
     pub fn diagonal_entries(&self) -> impl Iterator<Item = &SparseEntry> {
         self.entries
             .iter()
@@ -151,6 +187,48 @@ impl SparseMatrix {
             .iter()
             .filter(|(row, col, _value)| *row != *col)
     }
+
+    pub fn save(&self, file_path: &str) -> Result<(), std::io::Error> {
+        let file = File::create(file_path)?;
+        let mut writer = BufWriter::new(file);
+
+        for (row, col, val) in self.entries.iter() {
+            writeln!(writer, "{} {} {}", row, col, val)?;
+        }
+
+        writer.flush()?;
+
+        Ok(())
+    }
+
+    pub fn load(file_path: &str) -> Result<SparseMatrix, Box<dyn std::error::Error>> {
+        let file = File::open(file_path)?;
+        let reader = BufReader::new(file);
+
+        let mut entries = Vec::new();
+
+        for line in reader.lines() {
+            let line = line?;
+            let parts: Vec<&str> = line.split_whitespace().collect();
+
+            if parts.len() == 3 {
+                let row: usize = parts[0].parse()?;
+                let col: usize = parts[1].parse()?;
+                let val: f64 = parts[2].parse()?;
+                entries.push((row, col, val));
+            }
+        }
+
+        let mut matrix = SparseMatrix {
+            entries,
+            n_cols: 0,
+            n_rows: 0,
+            row_indices: Vec::new(),
+        };
+
+        matrix.preprocess();
+        Ok(matrix)
+    }
 }
 
 impl fmt::Display for SparseMatrix {
@@ -159,7 +237,7 @@ impl fmt::Display for SparseMatrix {
         for (row, col, value) in self.entries.iter() {
             write!(f, "   ({}, {}): {}\n", *row, *col, *value)?;
         }
-        write!(f, "] size={:?}", self.n_rows)?;
+        write!(f, "] n_rows={:?}", self.n_rows)?;
         Ok(())
     }
 }

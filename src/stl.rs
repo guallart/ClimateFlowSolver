@@ -1,59 +1,7 @@
+use crate::mesh::geometry::{Triangle, Vector};
 use ndarray::{s, Array2};
-use std::io::Write;
 use std::fs::File;
-
-#[derive(Clone, Copy, Debug)]
-pub struct Vector {
-    x: f64,
-    y: f64,
-    z: f64,
-}
-
-impl Vector {
-    fn new(x: f64, y: f64, z: f64) -> Vector {
-        Vector { x, y, z }
-    }
-}
-
-pub struct Triangle {
-    normal: Vector,
-    vertices: [Vector; 3],
-}
-
-pub fn compute_normal(v1: &Vector, v2: &Vector, v3: &Vector) -> Vector {
-    let u = Vector {
-        x: v2.x - v1.x,
-        y: v2.y - v1.y,
-        z: v2.z - v1.z,
-    };
-    let v = Vector {
-        x: v3.x - v1.x,
-        y: v3.y - v1.y,
-        z: v3.z - v1.z,
-    };
-
-    let normal = Vector {
-        x: u.y * v.z - u.z * v.y,
-        y: u.z * v.x - u.x * v.z,
-        z: u.x * v.y - u.y * v.x,
-    };
-
-    let mag = (normal.x * normal.x + normal.y * normal.y + normal.z * normal.z).sqrt();
-    Vector {
-        x: normal.x / mag,
-        y: normal.y / mag,
-        z: normal.z / mag,
-    }
-}
-
-impl Triangle {
-    fn new(v1: &Vector, v2: &Vector, v3: &Vector) -> Triangle {
-        Triangle {
-            vertices: [v1.clone(), v2.clone(), v3.clone()],
-            normal: compute_normal(v1, v2, v3),
-        }
-    }
-}
+use std::io::Write;
 
 pub struct Grid {
     pub elevations: Array2<f64>,
@@ -72,6 +20,10 @@ impl Grid {
 
     pub fn y(&self, row: usize) -> f64 {
         self.y_min + self.y_res * (row as f64)
+    }
+
+    pub fn z(&self, row: usize, col: usize) -> f64 {
+        self.elevations[[row, col]]
     }
 
     pub fn xyz(&self, col: usize, row: usize) -> Vector {
@@ -193,16 +145,17 @@ impl Grid {
             (cols, rows),
             (cols, rows),
             buf.as_mut_slice(),
-            Some(gdal::raster::ResampleAlg::NearestNeighbour)
+            Some(gdal::raster::ResampleAlg::NearestNeighbour),
         )?;
 
-        let mut elevations = Array2::from_shape_vec((rows, cols), buf).expect("Shape error at tiff to Array2");
+        let mut elevations =
+            Array2::from_shape_vec((rows, cols), buf).expect("Shape error at tiff to Array2");
         elevations.swap_axes(0, 1);
         let geo_transform = dataset.geo_transform()?;
         let x_min = geo_transform[0];
         let y_max = geo_transform[3];
         let x_res = geo_transform[1];
-        let y_res = - geo_transform[5];
+        let y_res = -geo_transform[5];
         let x_max = x_min + ((cols - 1) as f64) * x_res;
         let y_min = y_max - ((rows - 1) as f64) * y_res;
 
