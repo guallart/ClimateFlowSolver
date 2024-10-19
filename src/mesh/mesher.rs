@@ -10,6 +10,7 @@ pub enum WallType {
     Terrain,
     Sky,
     Inlet,
+    Interior,
 }
 
 pub enum Wall {
@@ -70,17 +71,26 @@ impl Mesh {
             }
         }
 
-        // let walls:Array2<Vec<Wall>> = Array2::from_elem((ny, nx), );
+        let walls_x:Vec<Wall> = Vec::new();
+        let walls_y:Vec<Wall> = Vec::new();
+        let walls_z:Vec<Wall> = Vec::new();
 
-        // for i in 0..nx - 1 {
-        //     for j in 0..ny - 1 {
-        //         walls
-        //     }
-        // }
+        for i in 0..nx {
+            for j in 0..ny {
+                for k in 0..depth[(i,j)] {
+
+                }
+            }
+        }
 
         Mesh { cells: Vec::new() }
     }
 }
+
+fn wall_cells_from_idx(i: usize, j: usize, k:usize) -> (Vec<usize>, WallType) {
+
+}
+
 
 // let v1 = Vector::new(xs[i], ys[j], zs[k]);
 // let v2 = Vector::new(xs[i + 1], ys[j], zs[k]);
