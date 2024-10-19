@@ -88,7 +88,7 @@ impl Mesh {
 }
 
 fn wall_cells_from_idx(i: usize, j: usize, k:usize) -> (Vec<usize>, WallType) {
-
+    
 }
 
 
