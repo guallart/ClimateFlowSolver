@@ -1,5 +1,3 @@
-use gdal::vector;
-
 #[derive(Clone, Copy, Debug)]
 pub struct Vector {
     pub x: f64,
