@@ -1,6 +1,6 @@
 use crate::mesh::geometry::{Triangle, Vector};
+use itertools::Itertools;
 use ndarray::{s, Array2};
-use std::fmt::format;
 use std::fs::File;
 use std::io::Write;
 
@@ -12,6 +12,10 @@ pub struct Grid {
     pub y_max: f64,
     pub x_res: f64,
     pub y_res: f64,
+    pub z_min: f64,
+    pub z_max: f64,
+    pub nx: usize,
+    pub ny: usize,
 }
 
 impl Grid {
@@ -150,6 +154,11 @@ impl Grid {
         let y_res = -geo_transform[5];
         let x_max = x_min + ((cols - 1) as f64) * x_res;
         let y_min = y_max - ((rows - 1) as f64) * y_res;
+        let (z_min, z_max) = match elevations.iter().minmax() {
+            itertools::MinMaxResult::MinMax(z_min, z_max) => (*z_min, *z_max),
+            _ => panic!("There is less than 2 elements in the tiff file"),
+        };
+        let (ny, nx) = elevations.dim();
 
         Ok(Grid {
             elevations,
@@ -159,6 +168,10 @@ impl Grid {
             y_max,
             x_res,
             y_res,
+            z_min,
+            z_max,
+            nx,
+            ny,
         })
     }
 }

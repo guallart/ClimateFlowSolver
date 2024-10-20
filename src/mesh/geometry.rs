@@ -105,6 +105,17 @@ impl Quad {
     }
 }
 
+pub fn average_points(points: &[Vector]) -> Vector {
+    if points.is_empty() {
+        return Vector::new(0.0, 0.0, 0.0);
+    }
+
+    points
+        .iter()
+        .fold(Vector::new(0.0, 0.0, 0.0), |acc, point| acc.add(point))
+        .div(points.len() as f64)
+}
+
 // pub fn compute_triangle_area(v1: &Vector, v2: &Vector, v3: &Vector) -> f64 {
 //     let u = v2.sub(&v1);
 //     let v = v3.sub(&v1);
