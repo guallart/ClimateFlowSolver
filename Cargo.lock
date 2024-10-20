@@ -6,6 +6,7 @@ version = 3
 name = "ClimateFlowSolver"
 version = "0.1.0"
 dependencies = [
+ "approx",
  "gdal",
  "itertools",
  "ndarray",

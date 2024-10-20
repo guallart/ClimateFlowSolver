@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+approx = "0.5.1"
 gdal = "0.17.1"
 itertools = "0.13.0"
 ndarray = "0.16.1"
