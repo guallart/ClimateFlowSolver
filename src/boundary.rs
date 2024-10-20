@@ -27,8 +27,8 @@ impl Grid {
         self.y_min + self.y_res * (row as f64)
     }
 
-    pub fn z(&self, row: usize, col: usize) -> f64 {
-        self.elevations[[row, col]]
+    pub fn z(&self, col: usize, row: usize) -> f64 {
+        self.elevations[[col, row]]
     }
 
     pub fn xyz(&self, col: usize, row: usize) -> Vector {
@@ -145,7 +145,8 @@ impl Grid {
         )?;
 
         let mut elevations =
-            Array2::from_shape_vec((cols, rows), buf).expect("Shape error at tiff to Array2");
+            Array2::from_shape_vec((rows, cols), buf).expect("Shape error at tiff to Array2");
+        elevations.swap_axes(0, 1);
 
         let geo_transform = dataset.geo_transform()?;
         let x_min = geo_transform[0];
@@ -158,7 +159,6 @@ impl Grid {
             itertools::MinMaxResult::MinMax(z_min, z_max) => (*z_min, *z_max),
             _ => panic!("There is less than 2 elements in the tiff file"),
         };
-        let (nx, ny) = elevations.dim();
 
         Ok(Grid {
             elevations,
@@ -170,8 +170,8 @@ impl Grid {
             y_res,
             z_min,
             z_max,
-            nx,
-            ny,
+            nx: cols,
+            ny: rows,
         })
     }
 }

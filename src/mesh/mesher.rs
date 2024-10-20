@@ -100,7 +100,13 @@ impl Mesh {
                 .reduce(f64::max)
                 .unwrap();
 
-                depth[(i, j)] = 1 + zs.partition_point(|z| *z >= max_height);
+                depth[(i, j)] = 1 + zs
+                    .iter()
+                    .take_while(|&&z| z >= max_height)
+                    .enumerate()
+                    .map(|(i, _z)| i)
+                    .last()
+                    .unwrap();
 
                 for k in 0..depth[(i, j)] - 1 {
                     let Vector { x: xa, y: ya, z: _ } = terrain.xyz(i, j);
