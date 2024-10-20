@@ -2,7 +2,7 @@ use crate::mesh::geometry::{Triangle, Vector};
 use itertools::Itertools;
 use ndarray::{s, Array2};
 use std::fs::File;
-use std::io::Write;
+use std::io::{BufWriter, Write};
 
 pub struct Grid {
     pub elevations: Array2<f64>,
@@ -145,8 +145,8 @@ impl Grid {
         )?;
 
         let mut elevations =
-            Array2::from_shape_vec((rows, cols), buf).expect("Shape error at tiff to Array2");
-        elevations.swap_axes(0, 1);
+            Array2::from_shape_vec((cols, rows), buf).expect("Shape error at tiff to Array2");
+
         let geo_transform = dataset.geo_transform()?;
         let x_min = geo_transform[0];
         let y_max = geo_transform[3];
@@ -158,7 +158,7 @@ impl Grid {
             itertools::MinMaxResult::MinMax(z_min, z_max) => (*z_min, *z_max),
             _ => panic!("There is less than 2 elements in the tiff file"),
         };
-        let (ny, nx) = elevations.dim();
+        let (nx, ny) = elevations.dim();
 
         Ok(Grid {
             elevations,
@@ -190,7 +190,8 @@ pub fn make_boundary_from_tiff(
 }
 
 pub fn write(triangles: Vec<Triangle>, file_name: &str) -> Result<(), std::io::Error> {
-    let mut stl_file = File::create(file_name)?;
+    let stl_file = File::create(file_name)?;
+    let mut stl_file = BufWriter::new(stl_file);
     writeln!(stl_file, "solid Vec<Triangle>")?;
     for triangle in triangles {
         writeln!(
