@@ -154,7 +154,21 @@ mod tests {
         let a = SparseMatrix::random(n_rows, n_entries, force_diagonal);
         let b = a.random_vec_like();
         let res = a.dot(&b);
-        assert!(res.is_ok());
+        assert!(
+            res.clone()
+                .map_err(|e| format!("Error from dot: {}", e))
+                .is_ok(),
+            "{}",
+            res.unwrap_err()
+        );
+        let res = a.dot_par(&b);
+        assert!(
+            res.clone()
+                .map_err(|e| format!("Error from dot_par: {}", e))
+                .is_ok(),
+            "{}",
+            res.unwrap_err()
+        );
     }
 
     #[test]

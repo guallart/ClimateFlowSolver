@@ -105,7 +105,7 @@ impl SparseMatrix {
 
     pub fn random_vec_like(&self) -> Vec<f64> {
         let mut rng = rand::thread_rng();
-        (0..self.n_rows)
+        (0..self.n_cols)
             .map(|_| rng.gen::<f64>() * 2.0 - 1.0)
             .collect()
     }
@@ -127,11 +127,11 @@ impl SparseMatrix {
     }
 
     pub fn dot_par(&self, x: &[f64]) -> Result<Vec<f64>, String> {
-        if self.n_rows != x.len() {
+        if self.n_cols != x.len() {
             return Err(format!(
                 "Cannot multiply a {}x{} matrix with a {}x1 vector",
                 self.n_rows,
-                self.n_rows,
+                self.n_cols,
                 x.len()
             ));
         }
@@ -150,11 +150,11 @@ impl SparseMatrix {
         Ok(b)
     }
     pub fn dot(&self, x: &[f64]) -> Result<Vec<f64>, String> {
-        if self.n_rows != x.len() {
+        if self.n_cols != x.len() {
             return Err(format!(
                 "Cannot multiply a {}x{} matrix with a {}x1 vector",
                 self.n_rows,
-                self.n_rows,
+                self.n_cols,
                 x.len()
             ));
         }
