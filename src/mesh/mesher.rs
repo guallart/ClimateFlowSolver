@@ -29,19 +29,21 @@ pub struct Wall {
 }
 
 /*
-         1             2
-         +-------------+
+         3             2
+         +-------------+  ---- x
         /|            /|
        / |           / |
-     3/  |         4/  |
+     7/  |         6/  |
      +-------------+   |
-     |   |         |   |
-     |   +---------|---+
-     |  /5         |  /6
-     | /           | /
-     |/            |/
+    /|   |         |   |
+   / |   +---------|---+
+  /  |  /0         |  /1
+ y   | / |         | /
+     |/  |         |/
      +-------------+
-     7             8
+     4   |         5
+         |
+         z
 */
 #[derive(Clone)]
 pub struct Cell {
@@ -101,25 +103,25 @@ impl Mesh {
                 depth[(i, j)] = 1 + zs.partition_point(|z| *z >= max_height);
 
                 for k in 0..depth[(i, j)] - 1 {
-                    let Vector { x: x1, y: y1, z: _ } = terrain.xyz(i, j);
-                    let Vector { x: x2, y: y2, z: _ } = terrain.xyz(i + 1, j);
-                    let Vector { x: x3, y: y3, z: _ } = terrain.xyz(i, j + 1);
-                    let Vector { x: x4, y: y4, z: _ } = terrain.xyz(i + 1, j + 1);
+                    let Vector { x: xa, y: ya, z: _ } = terrain.xyz(i, j);
+                    let Vector { x: xb, y: yb, z: _ } = terrain.xyz(i + 1, j);
+                    let Vector { x: xc, y: yc, z: _ } = terrain.xyz(i, j + 1);
+                    let Vector { x: xd, y: yd, z: _ } = terrain.xyz(i + 1, j + 1);
 
                     let z1 = zs[k];
                     let z2 = zs[k + 1];
 
-                    let v1 = Vector::new(x1, y1, z1);
-                    let v2 = Vector::new(x2, y2, z1);
-                    let v3 = Vector::new(x3, y3, z1);
-                    let v4 = Vector::new(x4, y4, z1);
-                    let v5 = Vector::new(x1, y1, z2);
-                    let v6 = Vector::new(x2, y2, z2);
-                    let v7 = Vector::new(x3, y3, z2);
-                    let v8 = Vector::new(x4, y4, z2);
+                    let v0 = Vector::new(xa, ya, z2);
+                    let v1 = Vector::new(xb, yb, z2);
+                    let v2 = Vector::new(xb, yb, z1);
+                    let v3 = Vector::new(xa, ya, z1);
+                    let v4 = Vector::new(xc, yc, z2);
+                    let v5 = Vector::new(xd, yd, z2);
+                    let v6 = Vector::new(xd, yd, z1);
+                    let v7 = Vector::new(xc, yc, z1);
 
                     let id = (nx * ny) * k + ny * i + j;
-                    let vertices = vec![v1, v2, v3, v4, v5, v6, v7, v8];
+                    let vertices = vec![v0, v1, v2, v3, v4, v5, v6, v7];
                     let center = geometry::average_points(&vertices);
                     cells[(i, j, k)] = Some(Cell {
                         id,
@@ -132,19 +134,19 @@ impl Mesh {
             }
         }
         /*
-                 1             2
+                 3             2
                  +-------------+  ---- x
                 /|            /|
                / |           / |
-             3/  |         4/  |
+             7/  |         6/  |
              +-------------+   |
             /|   |         |   |
            / |   +---------|---+
-          /  |  /5         |  /6
+          /  |  /0         |  /1
          y   | / |         | /
              |/  |         |/
              +-------------+
-             7   |         8
+             4   |         5
                  |
                  z
         */
@@ -154,6 +156,7 @@ impl Mesh {
                 for k in 0..depth[(i, j)] {
                     if let Some(cell) = &mut cells[(i, j, k)] {
                         let mut vertices = cell.vertices.iter();
+                        let v0 = vertices.next().unwrap();
                         let v1 = vertices.next().unwrap();
                         let v2 = vertices.next().unwrap();
                         let v3 = vertices.next().unwrap();
@@ -161,7 +164,6 @@ impl Mesh {
                         let v5 = vertices.next().unwrap();
                         let v6 = vertices.next().unwrap();
                         let v7 = vertices.next().unwrap();
-                        let v8 = vertices.next().unwrap();
 
                         let (kind, neighs) = if k == 0 {
                             (WallKind::Sky, [Some(cell.id), None])
@@ -169,7 +171,7 @@ impl Mesh {
                             let neigh_id = (nx * ny) * (k - 1) + ny * i + j;
                             (WallKind::Interior, [Some(cell.id), Some(neigh_id)])
                         };
-                        let wall_upper = Wall::new(&[&v1, &v2, &v3, &v4], kind, neighs);
+                        let wall_upper = Wall::new(&[&v3, &v7, &v6, &v2], kind, neighs);
                         cell.walls.push(wall_upper);
 
                         let (kind, neighs) = if j == 0 {
@@ -178,7 +180,7 @@ impl Mesh {
                             let neigh_id = (nx * ny) * k + ny * i + (j - 1);
                             (WallKind::Interior, [Some(cell.id), Some(neigh_id)])
                         };
-                        let wall_south = Wall::new(&[&v1, &v2, &v5, &v6], kind, neighs);
+                        let wall_south = Wall::new(&[&v3, &v2, &v1, &v0], kind, neighs);
                         cell.walls.push(wall_south);
 
                         let (kind, neighs) = if i == 0 {
@@ -187,7 +189,7 @@ impl Mesh {
                             let neigh_id = (nx * ny) * k + ny * (i - 1) + j;
                             (WallKind::Interior, [Some(cell.id), Some(neigh_id)])
                         };
-                        let wall_west = Wall::new(&[&v1, &v3, &v5, &v7], kind, neighs);
+                        let wall_west = Wall::new(&[&v0, &v4, &v7, &v3], kind, neighs);
                         cell.walls.push(wall_west);
 
                         let (kind, neighs) = if k == depth[(i, j)] - 1 {
@@ -196,7 +198,7 @@ impl Mesh {
                             let neigh_id = (nx * ny) * (k + 1) + ny * i + j;
                             (WallKind::Interior, [Some(cell.id), Some(neigh_id)])
                         };
-                        let wall_lower = Wall::new(&[&v5, &v6, &v7, &v8], kind, neighs);
+                        let wall_lower = Wall::new(&[&v0, &v1, &v5, &v4], kind, neighs);
                         cell.walls.push(wall_lower);
 
                         let (kind, neighs) = if j == ny - 1 {
@@ -205,7 +207,7 @@ impl Mesh {
                             let neigh_id = (nx * ny) * k + ny * i + (j + 1);
                             (WallKind::Interior, [Some(cell.id), Some(neigh_id)])
                         };
-                        let wall_north = Wall::new(&[&v3, &v4, &v7, &v8], kind, neighs);
+                        let wall_north = Wall::new(&[&v4, &v5, &v6, &v7], kind, neighs);
                         cell.walls.push(wall_north);
 
                         let (kind, neighs) = if i == nx - 1 {
@@ -214,7 +216,7 @@ impl Mesh {
                             let neigh_id = (nx * ny) * k + ny * (i + 1) + j;
                             (WallKind::Interior, [Some(cell.id), Some(neigh_id)])
                         };
-                        let wall_east = Wall::new(&[&v2, &v4, &v6, &v8], kind, neighs);
+                        let wall_east = Wall::new(&[&v1, &v2, &v6, &v5], kind, neighs);
                         cell.walls.push(wall_east);
                     }
                 }
