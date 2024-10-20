@@ -258,77 +258,61 @@ impl Mesh {
     }
 
     pub fn save_to_vtk(&self, filename: &str) -> Result<(), std::io::Error> {
-        let mut file = File::create(filename)?;
+        let file = File::create(filename)?;
+        let mut file = BufWriter::new(file);
 
         writeln!(file, "# vtk DataFile Version 3.0")?;
-        writeln!(file, "Mesh exported from ClimateFlowSolver")?;
+        writeln!(file, "Mesh exported from Rust")?;
         writeln!(file, "ASCII")?;
         writeln!(file, "DATASET UNSTRUCTURED_GRID")?;
 
-        // write vertices
+        // Write points
         let mut points = Vec::new();
-        let mut point_index = 0;
-        let mut point_map = std::collections::HashMap::new();
-
-        for cell in &self.cells {
-            for vertex in &cell.vertices {
-                if !point_map.contains_key(vertex) {
-                    point_map.insert(vertex, point_index);
-                    points.push(vertex);
-                    point_index += 1;
-                }
-            }
+        for cell in self.cells.iter() {
+            points.extend(cell.vertices.clone());
         }
-
         writeln!(file, "POINTS {} float", points.len())?;
-        for point in points {
+        for point in &points {
             writeln!(file, "{} {} {}", point.x, point.y, point.z)?;
         }
 
         // Write cells
-        let total_size: usize = self.cells.iter().map(|c| c.vertices.len() + 1).sum();
-        writeln!(file, "CELLS {} {}", self.cells.len(), total_size)?;
-
+        let total_cells = self.cells.len();
+        let size = self
+            .cells
+            .iter()
+            .map(|c| c.vertices.len() + 1)
+            .sum::<usize>();
+        writeln!(file, "CELLS {} {}", total_cells, size)?;
+        let mut point_offset = 0;
         for cell in &self.cells {
             write!(file, "{}", cell.vertices.len())?;
-            for vertex in &cell.vertices {
-                write!(file, " {}", point_map[vertex])?;
+            for i in 0..cell.vertices.len() {
+                write!(file, " {}", point_offset + i)?;
             }
             writeln!(file)?;
+            point_offset += cell.vertices.len();
         }
 
         // Write cell types
-        writeln!(file, "CELL_TYPES {}", self.cells.len())?;
-        for _cell in &self.cells {
-            writeln!(file, "12")?; //all hexahedral
+        writeln!(file, "CELL_TYPES {}", total_cells)?;
+        for cell in &self.cells {
+            let vtk_type = match cell.vertices.len() {
+                4 => 10, // VTK_TETRA
+                8 => 12, // VTK_HEXAHEDRON
+                _ => 7,  // VTK_POLYGON (generic)
+            };
+            writeln!(file, "{}", vtk_type)?;
         }
 
-        // write cell data
-        writeln!(file, "CELL_DATA {}", self.cells.len())?;
+        // Part 5: Dataset attributes (optional)
+        writeln!(file, "CELL_DATA {}", total_cells)?;
 
-        // write cell ids
+        // Write cell IDs
         writeln!(file, "SCALARS cell_id int 1")?;
         writeln!(file, "LOOKUP_TABLE default")?;
         for cell in &self.cells {
             writeln!(file, "{}", cell.id)?;
-        }
-
-        // write walls types
-        writeln!(file, "FIELD FieldData 1")?;
-        writeln!(file, "wall_types 1 {} int", self.cells.len())?;
-        for cell in &self.cells {
-            let wall_type = cell
-                .walls
-                .iter()
-                .map(|w| match w.kind {
-                    WallKind::Terrain => 0,
-                    WallKind::Sky => 1,
-                    WallKind::Inlet => 2,
-                    WallKind::Interior => 3,
-                })
-                .next()
-                .unwrap();
-            writeln!(file, "{}", wall_type)?;
         }
 
         Ok(())
