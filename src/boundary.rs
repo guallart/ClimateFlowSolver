@@ -200,3 +200,17 @@ pub fn write(triangles: Vec<Triangle>, file_name: &str) -> Result<(), std::io::E
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_create_boundaries() {
+        let tiff_path = r"/home/user/code/ClimateFlowSolver/testing/elevation_cropped.tif";
+        let stl_path = r"/home/user/code/ClimateFlowSolver/testing/boundaries.stl";
+        let max_height = 150.0;
+        let created = make_boundary_from_tiff(tiff_path, stl_path, max_height);
+        assert!(created.is_ok());
+    }
+}

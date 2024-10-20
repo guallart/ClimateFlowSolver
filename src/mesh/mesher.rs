@@ -2,9 +2,7 @@ use crate::{
     boundary::Grid,
     mesh::geometry::{Quad, Triangle, Vector},
 };
-use ndarray::s;
-use ndarray::Array2;
-use std::cmp::max;
+use ndarray::{s, Array2, Array3};
 
 pub enum WallType {
     Terrain,
@@ -68,18 +66,20 @@ impl Mesh {
                     .last()
                     .unwrap()
                     + 1;
+
+                println!("({i},{j})  -  {}", depth[(i, j)]);
             }
         }
 
-        let walls_x: Vec<Wall> = Vec::new();
-        let walls_y: Vec<Wall> = Vec::new();
-        let walls_z: Vec<Wall> = Vec::new();
+        // let walls_x: Vec<Wall> = Vec::new();
+        // let walls_y: Vec<Wall> = Vec::new();
+        // let walls_z: Vec<Wall> = Vec::new();
 
-        for i in 0..nx {
-            for j in 0..ny {
-                for k in 0..depth[(i, j)] {}
-            }
-        }
+        // for i in 0..nx {
+        //     for j in 0..ny {
+        //         for k in 0..depth[(i, j)] {}
+        //     }
+        // }
 
         Mesh { cells: Vec::new() }
     }

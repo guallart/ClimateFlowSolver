@@ -30,13 +30,6 @@ impl<'a> SparseSystem<'a> {
     }
 
     pub fn error_sq(&self, x: &[f64]) -> f64 {
-        // if self.use_iter {
-        //     self.coefficients
-        //         .dot_iter(&x)
-        //         .zip(self.column.iter())
-        //         .map(|(axi, bi)| (axi - bi).powi(2))
-        //         .sum()
-        // } else {
         self.coefficients
             .dot(&x)
             .unwrap()
@@ -146,5 +139,34 @@ impl<'a> SparseSystem<'a> {
             ),
             elapsed_time: Some(start.elapsed()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_dot_product() {
+        let n_rows = 1000;
+        let n_entries = 100;
+        let force_diagonal = false;
+        let a = SparseMatrix::random(n_rows, n_entries, force_diagonal);
+        let b = a.random_vec_like();
+        let res = a.dot(&b);
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_dot_product_2() {
+        let rows = vec![0, 1, 2, 2];
+        let cols = vec![0, 1, 2, 1];
+        let values = vec![1.0, 3.0, 5.0, 7.0];
+        let a = SparseMatrix::from_vecs(&rows, &cols, &values);
+        let b = vec![1.0, 1.0, 1.0];
+        let actual = a.dot(&b);
+        assert!(actual.is_ok());
+        let expected = vec![1.0, 3.0, 12.0];
+        assert_eq!(actual.unwrap(), expected);
     }
 }
