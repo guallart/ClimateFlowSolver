@@ -1,5 +1,6 @@
 use crate::mesh::geometry::{Triangle, Vector};
 use ndarray::{s, Array2};
+use std::fmt::format;
 use std::fs::File;
 use std::io::Write;
 
@@ -67,16 +68,7 @@ impl Grid {
         triangles
     }
 
-    pub fn make_walls(
-        &self,
-        max_heigh: f64,
-    ) -> (
-        Vec<Triangle>,
-        Vec<Triangle>,
-        Vec<Triangle>,
-        Vec<Triangle>,
-        Vec<Triangle>,
-    ) {
+    pub fn make_walls(&self, max_heigh: f64) -> [Vec<Triangle>; 5] {
         let height = max_heigh
             + self
                 .elevations
@@ -131,7 +123,7 @@ impl Grid {
         sky.push(Triangle::new(&nw, &se, &sw));
         sky.push(Triangle::new(&nw, &ne, &se));
 
-        (north, south, west, east, sky)
+        [north, south, west, east, sky]
     }
 
     pub fn from_tiff(path: &str) -> Result<Grid, gdal::errors::GdalError> {
@@ -169,6 +161,19 @@ impl Grid {
             y_res,
         })
     }
+}
+
+pub fn make_boundary_from_tiff(
+    tiff_path: &str,
+    stl_path: &str,
+    max_height: f64,
+) -> Result<(), String> {
+    let grid = Grid::from_tiff(tiff_path).map_err(|e| format!("Failed at loading tiff: {e}"))?;
+    let walls: Vec<Triangle> = grid.make_walls(max_height).into_iter().flatten().collect();
+    let terrain = grid.triangulate();
+    let boundaries = [terrain, walls].concat();
+    write(boundaries, stl_path).map_err(|e| format!("Failed at writing stl: {e}"))?;
+    Ok(())
 }
 
 pub fn write(triangles: Vec<Triangle>, file_name: &str) -> Result<(), std::io::Error> {
