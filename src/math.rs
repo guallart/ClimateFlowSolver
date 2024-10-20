@@ -1,19 +1,17 @@
-use num::traits::Float;
-
-pub fn logspace<T: Float>(start: T, end: T, num: usize) -> impl Iterator<Item = T> {
-    let lin_space: Vec<T> = (0..num)
+#[allow(unused)]
+pub fn logspace(start: f64, end: f64, num: usize) -> Vec<f64> {
+    let lin_space: Vec<f64> = (0..num)
         .map(|i| {
-            let fraction = T::from(i).unwrap() / T::from(num - 1).unwrap();
+            let fraction = i as f64 / ((num - 1) as f64);
             start + fraction * (end - start)
         })
         .collect();
 
-    lin_space
-        .into_iter()
-        .map(|x| T::from(10.0).unwrap().powf(x))
+    lin_space.into_iter().map(|x| (10 as f64).powf(x)).collect()
 }
 
-fn linspace(start: f64, stop: f64, num: usize) -> Vec<f64> {
+#[allow(unused)]
+pub fn linspace(start: f64, stop: f64, num: usize) -> Vec<f64> {
     if num < 2 {
         return vec![start];
     }
@@ -43,7 +41,7 @@ mod tests {
 
     #[test]
     fn test_logspace() {
-        let actual = logspace(0.0, 3.0, 4).collect::<Vec<f64>>();
+        let actual = logspace(0.0, 3.0, 4);
         let expected = vec![1.0, 10.0, 100.0, 1000.0];
         assert_eq!(actual, expected);
     }
