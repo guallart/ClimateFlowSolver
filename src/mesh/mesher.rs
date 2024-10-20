@@ -1,6 +1,6 @@
 use crate::{
+    boundary::Grid,
     mesh::geometry::{Quad, Triangle, Vector},
-    stl::Grid,
 };
 use ndarray::s;
 use ndarray::Array2;
@@ -71,15 +71,13 @@ impl Mesh {
             }
         }
 
-        let walls_x:Vec<Wall> = Vec::new();
-        let walls_y:Vec<Wall> = Vec::new();
-        let walls_z:Vec<Wall> = Vec::new();
+        let walls_x: Vec<Wall> = Vec::new();
+        let walls_y: Vec<Wall> = Vec::new();
+        let walls_z: Vec<Wall> = Vec::new();
 
         for i in 0..nx {
             for j in 0..ny {
-                for k in 0..depth[(i,j)] {
-
-                }
+                for k in 0..depth[(i, j)] {}
             }
         }
 
@@ -87,10 +85,9 @@ impl Mesh {
     }
 }
 
-fn wall_cells_from_idx(i: usize, j: usize, k:usize) -> (Vec<usize>, WallType) {
+fn wall_cells_from_idx(i: usize, j: usize, k: usize) -> (Vec<usize>, WallType) {
     todo!();
 }
-
 
 // let v1 = Vector::new(xs[i], ys[j], zs[k]);
 // let v2 = Vector::new(xs[i + 1], ys[j], zs[k]);

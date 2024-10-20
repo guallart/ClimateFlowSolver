@@ -47,6 +47,7 @@ impl Vector {
     }
 }
 
+#[derive(Clone)]
 pub struct Triangle {
     pub normal: Vector,
     pub vertices: [Vector; 3],
@@ -56,6 +57,7 @@ pub struct Triangle {
     pub z: f64,
 }
 
+#[derive(Clone)]
 pub struct Quad {
     pub normal: Vector,
     pub vertices: [Vector; 4],
