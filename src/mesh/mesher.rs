@@ -90,19 +90,19 @@ impl Mesh {
         // Create cells
         for i in 0..nx - 1 {
             for j in 0..ny - 1 {
-                let max_height = [
+                let min_height = [
                     terrain.z(i, j),
                     terrain.z(i + 1, j),
                     terrain.z(i, j + 1),
                     terrain.z(i + 1, j + 1),
                 ]
                 .into_iter()
-                .reduce(f64::max)
+                .reduce(f64::min)
                 .unwrap();
 
                 depth[(i, j)] = 1 + zs
                     .iter()
-                    .take_while(|&&z| z >= max_height)
+                    .take_while(|&&z| z >= min_height)
                     .enumerate()
                     .map(|(i, _z)| i)
                     .last()
