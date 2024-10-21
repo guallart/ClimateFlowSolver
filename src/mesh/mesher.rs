@@ -265,7 +265,7 @@ impl Mesh {
         Mesh { cells: cells_mesh }
     }
 
-    pub fn save_to_vtk(&self, filename: &str) -> Result<(), std::io::Error> {
+    pub fn save_to_vtk(&self, filename: AsRef<Path>) -> Result<(), std::io::Error> {
         let file = File::create(filename)?;
         let mut file = BufWriter::new(file);
 

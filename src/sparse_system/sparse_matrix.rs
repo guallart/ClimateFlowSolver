@@ -188,7 +188,7 @@ impl SparseMatrix {
             .filter(|(row, col, _value)| *row != *col)
     }
 
-    pub fn save(&self, file_path: &str) -> Result<(), std::io::Error> {
+    pub fn save(&self, file_path: AsRef<Path>) -> Result<(), std::io::Error> {
         let file = File::create(file_path)?;
         let mut writer = BufWriter::new(file);
 
@@ -201,7 +201,7 @@ impl SparseMatrix {
         Ok(())
     }
 
-    pub fn load(file_path: &str) -> Result<SparseMatrix, Box<dyn std::error::Error>> {
+    pub fn load(file_path: AsRef<Path>) -> Result<SparseMatrix, Box<dyn std::error::Error>> {
         let file = File::open(file_path)?;
         let reader = BufReader::new(file);
 

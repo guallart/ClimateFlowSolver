@@ -3,6 +3,7 @@ use itertools::Itertools;
 use ndarray::{s, Array2};
 use std::fs::File;
 use std::io::{BufWriter, Write};
+use std::path::Path;
 
 pub struct Grid {
     pub elevations: Array2<f64>,
@@ -130,7 +131,7 @@ impl Grid {
         [north, south, west, east, sky]
     }
 
-    pub fn from_tiff(path: &str) -> Result<Grid, gdal::errors::GdalError> {
+    pub fn from_tiff(path: AsRef<Path>) -> Result<Grid, gdal::errors::GdalError> {
         let dataset = gdal::Dataset::open(path)?;
         let band = dataset.rasterband(1)?;
         let (cols, rows) = band.size();
@@ -177,8 +178,8 @@ impl Grid {
 }
 
 pub fn make_boundary_from_tiff(
-    tiff_path: &str,
-    stl_path: &str,
+    tiff_path: AsRef<Path>,
+    stl_path: AsRef<Path>,
     max_height: f64,
 ) -> Result<(), String> {
     let grid = Grid::from_tiff(tiff_path).map_err(|e| format!("Failed at loading tiff: {e}"))?;
@@ -189,7 +190,7 @@ pub fn make_boundary_from_tiff(
     Ok(())
 }
 
-pub fn write(triangles: Vec<Triangle>, file_name: &str) -> Result<(), std::io::Error> {
+pub fn write(triangles: Vec<Triangle>, file_name: AsRef<Path>) -> Result<(), std::io::Error> {
     let stl_file = File::create(file_name)?;
     let mut stl_file = BufWriter::new(stl_file);
     writeln!(stl_file, "solid Vec<Triangle>")?;
