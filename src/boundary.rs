@@ -175,19 +175,14 @@ impl Grid {
             ny: rows,
         })
     }
-}
 
-pub fn make_boundary_from_tiff(
-    tiff_path: AsRef<Path>,
-    stl_path: AsRef<Path>,
-    max_height: f64,
-) -> Result<(), String> {
-    let grid = Grid::from_tiff(tiff_path).map_err(|e| format!("Failed at loading tiff: {e}"))?;
-    let walls: Vec<Triangle> = grid.make_walls(max_height).into_iter().flatten().collect();
-    let terrain = grid.triangulate();
-    let boundaries = [terrain, walls].concat();
-    write(boundaries, stl_path).map_err(|e| format!("Failed at writing stl: {e}"))?;
-    Ok(())
+    pub fn make_boundary(&self, stl_path: AsRef<Path>, max_height: f64) -> Result<(), String> {
+        let walls: Vec<Triangle> = self.make_walls(max_height).into_iter().flatten().collect();
+        let terrain = self.triangulate();
+        let boundaries = [terrain, walls].concat();
+        write(boundaries, stl_path).map_err(|e| format!("Failed at writing stl: {e}"))?;
+        Ok(())
+    }
 }
 
 pub fn write(triangles: Vec<Triangle>, file_name: AsRef<Path>) -> Result<(), std::io::Error> {
