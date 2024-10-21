@@ -8,7 +8,7 @@ mod benchmarking;
 use std::path::Path;
 
 fn main() {
-    let input_folder = Path::new(r"C:\devops\ClimateFlowSolver\testing");
+    let input_folder = Path::new(r"~/code/ClimateFlowSolver");
     let tiff_path = input_folder.join("elevation.tif");
     let stl_path = input_folder.join("boundary.stl");
     let vtk_path = input_folder.join("boundary.stl");
