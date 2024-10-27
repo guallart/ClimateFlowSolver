@@ -101,7 +101,7 @@ impl Mesh {
                 .reduce(f64::min)
                 .unwrap();
 
-                z_count[(i, j)] = 1 + zs
+                z_count[(i, j)] = 2 + zs
                     .iter()
                     .take_while(|&&z| z >= min_height)
                     .enumerate()
