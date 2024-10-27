@@ -16,7 +16,6 @@ fn main() {
     let max_height = terrain.z_max + height_amp * 0.5;
     let min_height = terrain.z_min - height_amp * 0.1;
     let z_values = math::linspace(min_height, max_height, 5);
-    println!("{:?}", z_values);
 
     terrain
         .make_boundary(stl_path, height_amp * 0.5)
