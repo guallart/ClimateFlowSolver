@@ -15,8 +15,10 @@ fn main() {
     let min_height = terrain.z_max - 100.0;
     let z_values = math::linspace(min_height, max_height, 100);
 
-    boundary::make_boundary_from_tiff(tiff_path, stl_path, max_height)
+    terrain
+        .make_boundary(stl_path, 100.0)
         .expect("Failed at saving boundary");
+
     let mesh = mesh::mesher::Mesh::naive_mesh(&terrain, z_values);
-    mesh.save_to_vtk(vtk_path).expect("Failefd at saving vtk");
+    mesh.save_to_vtk(vtk_path).expect("Failed at saving vtk");
 }
