@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::{BufWriter, Write};
+use std::path::Path;
 
 use crate::{
     boundary::Grid,
@@ -90,19 +91,19 @@ impl Mesh {
         // Create cells
         for i in 0..nx - 1 {
             for j in 0..ny - 1 {
-                let max_height = [
+                let min_height = [
                     terrain.z(i, j),
                     terrain.z(i + 1, j),
                     terrain.z(i, j + 1),
                     terrain.z(i + 1, j + 1),
                 ]
                 .into_iter()
-                .reduce(f64::max)
+                .reduce(f64::min)
                 .unwrap();
 
                 depth[(i, j)] = 1 + zs
                     .iter()
-                    .take_while(|&&z| z >= max_height)
+                    .take_while(|&&z| z >= min_height)
                     .enumerate()
                     .map(|(i, _z)| i)
                     .last()
@@ -265,7 +266,7 @@ impl Mesh {
         Mesh { cells: cells_mesh }
     }
 
-    pub fn save_to_vtk(&self, filename: &str) -> Result<(), std::io::Error> {
+    pub fn save_to_vtk(&self, filename: impl AsRef<Path>) -> Result<(), std::io::Error> {
         let file = File::create(filename)?;
         let mut file = BufWriter::new(file);
 

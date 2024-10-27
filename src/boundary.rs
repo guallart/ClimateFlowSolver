@@ -3,6 +3,7 @@ use ndarray::{s, Array2};
 use std::fmt;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write};
+use std::path::Path;
 use tiff::decoder::{Decoder, DecodingResult};
 use tiff::tags::Tag;
 use tiff::{TiffError, TiffFormatError};
@@ -177,7 +178,7 @@ impl Grid {
         Ok((x_min, y_max, x_res, y_res))
     }
 
-    pub fn from_tiff(path: &str) -> Result<Grid, Box<dyn std::error::Error>> {
+    pub fn from_tiff(path: impl AsRef<Path>) -> Result<Grid, Box<dyn std::error::Error>> {
         let file = File::open(path)?;
         let mut decoder = Decoder::new(BufReader::new(file))?;
 
@@ -258,8 +259,8 @@ impl fmt::Display for Grid {
 }
 
 pub fn make_boundary_from_tiff(
-    tiff_path: &str,
-    stl_path: &str,
+    tiff_path: impl AsRef<Path>,
+    stl_path: impl AsRef<Path>,
     max_height: f64,
 ) -> Result<(), String> {
     let grid = Grid::from_tiff(tiff_path).map_err(|e| format!("Failed at loading tiff: {e}"))?;
@@ -270,7 +271,7 @@ pub fn make_boundary_from_tiff(
     Ok(())
 }
 
-pub fn write(triangles: Vec<Triangle>, file_name: &str) -> Result<(), std::io::Error> {
+pub fn write(triangles: Vec<Triangle>, file_name: impl AsRef<Path>) -> Result<(), std::io::Error> {
     let stl_file = File::create(file_name)?;
     let mut stl_file = BufWriter::new(stl_file);
     writeln!(stl_file, "solid Vec<Triangle>")?;
