@@ -48,15 +48,36 @@ pub struct Wall {
 */
 #[derive(Clone)]
 pub struct Cell {
-    id: usize,
-    vertices: Vec<Vector>,
-    walls: Vec<Wall>,
-    center: Vector,
-    neighbours: Vec<usize>,
+    pub id: usize,
+    pub vertices: Vec<Vector>,
+    pub walls: Vec<Wall>,
+    pub center: Vector,
+    pub neighbours: Vec<usize>,
+    pub physics: CellPhysics,
+    pub ground_height: f64,
+}
+
+#[derive(Clone)]
+pub struct CellPhysics {
+    pub velocity: Vector,
+    pub pressure: f64,
+    pub temperature: f64,
+    pub density: f64,
 }
 
 pub struct Mesh {
-    cells: Vec<Cell>,
+    pub cells: Vec<Cell>,
+}
+
+impl CellPhysics {
+    pub fn new() -> CellPhysics {
+        CellPhysics {
+            velocity: Vector::new(0.0, 0.0, 0.0),
+            pressure: 0.0,
+            temperature: 0.0,
+            density: 0.0,
+        }
+    }
 }
 
 impl Wall {
@@ -101,6 +122,16 @@ impl Mesh {
                 .reduce(f64::min)
                 .unwrap();
 
+                let avg_height = [
+                    terrain.z(i, j),
+                    terrain.z(i + 1, j),
+                    terrain.z(i, j + 1),
+                    terrain.z(i + 1, j + 1),
+                ]
+                .into_iter()
+                .sum::<f64>()
+                    / 4.0;
+
                 z_count[(i, j)] = 2 + zs
                     .iter()
                     .take_while(|&&z| z >= min_height)
@@ -136,6 +167,8 @@ impl Mesh {
                         walls: Vec::with_capacity(6),
                         center,
                         neighbours: Vec::with_capacity(6),
+                        physics: CellPhysics::new(),
+                        ground_height: avg_height,
                     });
                 }
             }

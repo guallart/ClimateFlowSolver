@@ -1,3 +1,5 @@
+use core::f64;
+
 #[allow(unused)]
 pub fn logspace(start: f64, end: f64, num: usize) -> Vec<f64> {
     let lin_space: Vec<f64> = (0..num)
@@ -71,6 +73,14 @@ impl Interpolator {
     pub fn interp1d(&self, x: Vec<f64>) -> Vec<f64> {
         x.into_iter().map(|xi| self.interp(xi)).collect()
     }
+}
+
+pub fn as_degrees(rad: f64) -> f64 {
+    rad * 180.0 / f64::consts::PI
+}
+
+pub fn as_rads(deg: f64) -> f64 {
+    deg * f64::consts::PI / 180.0
 }
 
 #[cfg(test)]
