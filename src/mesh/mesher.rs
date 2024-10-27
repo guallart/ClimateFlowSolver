@@ -86,7 +86,7 @@ impl Mesh {
         let zs: Vec<f64> = zs.into_iter().rev().collect();
 
         let mut cells: Array3<Option<Cell>> = Array3::from_elem((nx, ny, nz), None);
-        let mut depth = Array2::from_elem((nx, ny), 0);
+        let mut z_count = Array2::from_elem((nx, ny), 0);
 
         // Create cells
         for i in 0..nx - 1 {
@@ -101,7 +101,7 @@ impl Mesh {
                 .reduce(f64::min)
                 .unwrap();
 
-                depth[(i, j)] = 1 + zs
+                z_count[(i, j)] = 1 + zs
                     .iter()
                     .take_while(|&&z| z >= min_height)
                     .enumerate()
@@ -109,7 +109,7 @@ impl Mesh {
                     .last()
                     .unwrap();
 
-                for k in 0..depth[(i, j)] - 1 {
+                for k in 0..z_count[(i, j)] - 1 {
                     let Vector { x: xa, y: ya, z: _ } = terrain.xyz(i, j);
                     let Vector { x: xb, y: yb, z: _ } = terrain.xyz(i + 1, j);
                     let Vector { x: xc, y: yc, z: _ } = terrain.xyz(i, j + 1);
@@ -160,7 +160,7 @@ impl Mesh {
         // Create walls
         for i in 0..nx - 1 {
             for j in 0..ny - 1 {
-                for k in 0..depth[(i, j)] {
+                for k in 0..z_count[(i, j)] {
                     if let Some(cell) = &mut cells[(i, j, k)] {
                         let mut vertices = cell.vertices.iter();
                         let v0 = vertices.next().unwrap();
@@ -199,7 +199,7 @@ impl Mesh {
                         let wall_west = Wall::new(&[&v0, &v4, &v7, &v3], kind, neighs);
                         cell.walls.push(wall_west);
 
-                        let (kind, neighs) = if k == depth[(i, j)] - 1 {
+                        let (kind, neighs) = if k == z_count[(i, j)] - 1 {
                             (WallKind::Terrain, [Some(cell.id), None])
                         } else {
                             let neigh_id = (nx * ny) * (k + 1) + ny * i + j;
@@ -235,7 +235,7 @@ impl Mesh {
         let mut count = 0;
         for i in 0..nx - 1 {
             for j in 0..ny - 1 {
-                for k in 0..depth[(i, j)] {
+                for k in 0..z_count[(i, j)] {
                     if let Some(cell) = &cells[(i, j, k)] {
                         new_idx[cell.id] = count;
                         count += 1;
@@ -247,7 +247,7 @@ impl Mesh {
         // Reindex cells and walls
         for i in 0..nx - 1 {
             for j in 0..ny - 1 {
-                for k in 0..depth[(i, j)] {
+                for k in 0..z_count[(i, j)] {
                     if let Some(cell) = &mut cells[(i, j, k)] {
                         cell.id = new_idx[cell.id];
                         for wall in cell.walls.clone().iter_mut() {
