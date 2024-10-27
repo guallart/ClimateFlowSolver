@@ -178,8 +178,8 @@ impl Grid {
         Ok((x_min, y_max, x_res, y_res))
     }
 
-    pub fn from_tiff(path: impl AsRef<Path>) -> Result<Grid, Box<dyn std::error::Error>> {
-        let file = File::open(path)?;
+    pub fn from_tiff(tiff_path: impl AsRef<Path>) -> Result<Grid, Box<dyn std::error::Error>> {
+        let file = File::open(tiff_path)?;
         let mut decoder = Decoder::new(BufReader::new(file))?;
 
         let (cols, rows) = decoder.dimensions()?;
