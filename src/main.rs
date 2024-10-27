@@ -22,8 +22,8 @@ fn main() {
         .expect("Failed at saving boundary");
 
     let mut mesh = mesh::mesher::Mesh::naive_mesh(&terrain, z_values);
-    initial_conditions::define_initial_conditions_naive(
-        &mut mesh, 500.0, 6.0, 1.225, 0.0, 0.2, 300.0,
-    );
+    mesh.define_initial_conditions_naive(500.0, 6.0, 1.225, 0.0, 0.2, 300.0);
     mesh.save_to_vtk(vtk_path).expect("Failed at saving vtk");
+
+    // TODO export physics to vtk
 }
