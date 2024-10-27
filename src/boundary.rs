@@ -1,8 +1,11 @@
 use crate::mesh::geometry::{Triangle, Vector};
-use itertools::Itertools;
 use ndarray::{s, Array2};
+use std::fmt;
 use std::fs::File;
-use std::io::{BufWriter, Write};
+use std::io::{BufReader, BufWriter, Write};
+use tiff::decoder::{Decoder, DecodingResult};
+use tiff::tags::Tag;
+use tiff::{TiffError, TiffFormatError};
 
 pub struct Grid {
     pub elevations: Array2<f64>,
@@ -130,35 +133,88 @@ impl Grid {
         [north, south, west, east, sky]
     }
 
-    pub fn from_tiff(path: &str) -> Result<Grid, gdal::errors::GdalError> {
-        let dataset = gdal::Dataset::open(path)?;
-        let band = dataset.rasterband(1)?;
-        let (cols, rows) = band.size();
-
-        let mut buf = vec![0.0; cols * rows];
-        band.read_into_slice::<f64>(
-            (0, 0),
-            (cols, rows),
-            (cols, rows),
-            buf.as_mut_slice(),
-            Some(gdal::raster::ResampleAlg::NearestNeighbour),
-        )?;
-
-        let mut elevations =
-            Array2::from_shape_vec((rows, cols), buf).expect("Shape error at tiff to Array2");
-        elevations.swap_axes(0, 1);
-
-        let geo_transform = dataset.geo_transform()?;
-        let x_min = geo_transform[0];
-        let y_max = geo_transform[3];
-        let x_res = geo_transform[1];
-        let y_res = -geo_transform[5];
-        let x_max = x_min + ((cols - 1) as f64) * x_res;
-        let y_min = y_max - ((rows - 1) as f64) * y_res;
-        let (z_min, z_max) = match elevations.iter().minmax() {
-            itertools::MinMaxResult::MinMax(z_min, z_max) => (*z_min, *z_max),
-            _ => panic!("There is less than 2 elements in the tiff file"),
+    fn get_geotransform(
+        decoder: &mut Decoder<BufReader<File>>,
+    ) -> Result<(f64, f64, f64, f64), Box<dyn std::error::Error>> {
+        let pixel_scale = match decoder.get_tag(Tag::ModelPixelScaleTag) {
+            Ok(value) => value.into_f64_vec()?,
+            Err(TiffError::FormatError(TiffFormatError::RequiredTagNotFound(_))) => {
+                return Err("ModelPixelScaleTag not found".into());
+            }
+            Err(e) => return Err(e.into()),
         };
+
+        let tiepoint = match decoder.get_tag(Tag::ModelTiepointTag) {
+            Ok(value) => value.into_f64_vec()?,
+            Err(TiffError::FormatError(TiffFormatError::RequiredTagNotFound(_))) => {
+                match decoder.get_tag(Tag::ModelTransformationTag) {
+                    Ok(value) => {
+                        let transform = value.into_f64_vec()?;
+                        if transform.len() < 16 {
+                            return Err("Invalid ModelTransformationTag".into());
+                        }
+                        return Ok((transform[3], transform[7], transform[0], -transform[5]));
+                    }
+                    Err(_) => {
+                        return Err(
+                            "Neither ModelTiepointTag nor ModelTransformationTag found".into()
+                        )
+                    }
+                }
+            }
+            Err(e) => return Err(e.into()),
+        };
+
+        if pixel_scale.len() < 3 || tiepoint.len() < 6 {
+            return Err("Invalid GeoTIFF tags".into());
+        }
+
+        let x_res = pixel_scale[0];
+        let y_res = pixel_scale[1];
+        let x_min = tiepoint[3];
+        let y_max = tiepoint[4];
+
+        Ok((x_min, y_max, x_res, y_res))
+    }
+
+    pub fn from_tiff(path: &str) -> Result<Grid, Box<dyn std::error::Error>> {
+        let file = File::open(path)?;
+        let mut decoder = Decoder::new(BufReader::new(file))?;
+
+        let (cols, rows) = decoder.dimensions()?;
+        let (cols, rows) = (cols as usize, rows as usize);
+
+        let mut elevations = Array2::zeros((cols, rows));
+
+        match decoder.read_image()? {
+            DecodingResult::F32(buf) => {
+                for (i, &value) in buf.iter().enumerate() {
+                    let col = i % cols;
+                    let row = i / cols;
+                    elevations[[col, row]] = value as f64;
+                }
+            }
+            DecodingResult::F64(buf) => {
+                for (i, &value) in buf.iter().enumerate() {
+                    let col = i % cols;
+                    let row = i / cols;
+                    elevations[[col, row]] = value;
+                }
+            }
+            _ => {
+                return Err("Unsupported TIFF format: expected F32 or F64 data".into());
+            }
+        }
+
+        let (x_min, y_max, x_res, y_res) = Grid::get_geotransform(&mut decoder)?;
+        let x_max = x_min + ((cols - 1) as f64 * x_res);
+        let y_min = y_max - ((rows - 1) as f64 * y_res);
+
+        let (z_min, z_max) = elevations
+            .iter()
+            .fold((f64::INFINITY, f64::NEG_INFINITY), |(min, max), &val| {
+                (min.min(val), max.max(val))
+            });
 
         Ok(Grid {
             elevations,
@@ -173,6 +229,31 @@ impl Grid {
             nx: cols,
             ny: rows,
         })
+    }
+}
+
+impl fmt::Display for Grid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Grid {{\n")?;
+        write!(f, "  Dimensions: {}x{}\n", self.nx, self.ny)?;
+        write!(
+            f,
+            "  X range: {:.2} to {:.2} (resolution: {:.2})\n",
+            self.x_min, self.x_max, self.x_res
+        )?;
+        write!(
+            f,
+            "  Y range: {:.2} to {:.2} (resolution: {:.2})\n",
+            self.y_min, self.y_max, self.y_res
+        )?;
+        write!(f, "  Z range: {:.2} to {:.2}\n", self.z_min, self.z_max)?;
+        write!(
+            f,
+            "  Elevation matrix: {}x{} Array2\n",
+            self.elevations.nrows(),
+            self.elevations.ncols()
+        )?;
+        write!(f, "}}")
     }
 }
 
