@@ -6,10 +6,13 @@ mod sparse_system;
 #[macro_use]
 mod benchmarking;
 
+use std::env;
+
 fn main() {
-    let tiff_path = r"/home/user/code/ClimateFlowSolver/testing/elevation_cropped.tif";
-    let stl_path = r"/home/user/code/ClimateFlowSolver/testing/boundary.stl";
-    let vtk_path = r"/home/user/code/ClimateFlowSolver/testing/mesh.vtk";
+    let testing_dir = env::current_dir().unwrap().join("testing");
+    let tiff_path = testing_dir.join("elevation.tif");
+    let stl_path = testing_dir.join("boundary.stl");
+    let vtk_path = testing_dir.join("mesh.vtk");
 
     let terrain = boundary::Grid::from_tiff(tiff_path).unwrap();
     let height_amp = terrain.z_max - terrain.z_min;
