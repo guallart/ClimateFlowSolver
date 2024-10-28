@@ -6,10 +6,8 @@ mod sparse_system;
 #[macro_use]
 mod benchmarking;
 
-use std::env;
-
 fn main() {
-    let testing_dir = env::current_dir().unwrap().join("testing");
+    let testing_dir = std::env::current_dir().unwrap().join("testing");
     let tiff_path = testing_dir.join("elevation.tif");
     let stl_path = testing_dir.join("boundary.stl");
     let vtk_path = testing_dir.join("mesh.vtk");
