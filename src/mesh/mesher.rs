@@ -54,6 +54,7 @@ pub struct Cell {
     pub neighbours: Vec<usize>,
     pub physics: CellPhysics,
     pub ground_height: f64,
+    pub volume: f64,
 }
 
 #[derive(Clone)]
@@ -160,6 +161,7 @@ impl Mesh {
                     let id = (nx * ny) * k + ny * i + j;
                     let vertices = vec![v0, v1, v2, v3, v4, v5, v6, v7];
                     let center = geometry::average_points(&vertices);
+                    let volume = (v1.x - v0.x) * (v4.y - v0.y) * (v0.z - v3.z);
                     cells[(i, j, k)] = Some(Cell {
                         id,
                         vertices,
@@ -168,6 +170,7 @@ impl Mesh {
                         neighbours: Vec::with_capacity(6),
                         physics: CellPhysics::new(),
                         ground_height: avg_height,
+                        volume,
                     });
                 }
             }
