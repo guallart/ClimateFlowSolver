@@ -1,5 +1,9 @@
 use core::f64;
 
+use itertools::Itertools;
+
+use crate::mesh::geometry::Vector;
+
 #[allow(unused)]
 pub fn logspace(start: f64, end: f64, num: usize) -> Vec<f64> {
     let lin_space: Vec<f64> = (0..num)
@@ -75,12 +79,24 @@ impl Interpolator {
     }
 }
 
+#[allow(unused)]
 pub fn as_degrees(rad: f64) -> f64 {
     rad * 180.0 / f64::consts::PI
 }
 
+#[allow(unused)]
 pub fn as_rads(deg: f64) -> f64 {
     deg * f64::consts::PI / 180.0
+}
+
+#[allow(unused)]
+pub fn compute_volume(points: &[Vector]) -> f64 {
+    let mut volume = 0.0;
+    for (a, b, c) in points.iter().tuple_windows() {
+        volume += a.dot(&normal)
+    }
+
+    (volume / 6.0).abs()
 }
 
 #[cfg(test)]
@@ -119,5 +135,22 @@ mod tests {
         let y_test = interp.interp1d(x_test);
         assert_relative_eq!(y_test[0], 2.0, epsilon = 1e-6);
         assert_relative_eq!(y_test[1], 4.0, epsilon = 1e-6);
+    }
+
+    #[test]
+    fn test_volume() {
+        let points = [
+            Vector::new(0.0, 0.0, 0.0),
+            Vector::new(1.0, 0.0, 0.0),
+            Vector::new(0.0, 1.0, 0.0),
+            Vector::new(1.0, 1.0, 0.0),
+            Vector::new(0.0, 0.0, 1.0),
+            Vector::new(1.0, 0.0, 1.0),
+            Vector::new(0.0, 1.0, 1.0),
+            Vector::new(1.0, 1.0, 1.0),
+        ];
+
+        let volume = compute_volume(&points);
+        assert_relative_eq!(volume, 1.0, epsilon = 1e-6)
     }
 }
