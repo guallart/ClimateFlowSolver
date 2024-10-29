@@ -298,10 +298,12 @@ mod tests {
 
     #[test]
     fn test_create_boundaries() {
-        let tiff_path = r"/home/user/code/ClimateFlowSolver/testing/elevation_cropped.tif";
-        let stl_path = r"/home/user/code/ClimateFlowSolver/testing/boundaries.stl";
+        let testing_dir = std::env::current_dir().unwrap().join("testing");
+        let tiff_path = testing_dir.join("elevation.tif");
+        let stl_path = testing_dir.join("boundary.stl");
         let max_height = 150.0;
-        let created = make_boundary_from_tiff(tiff_path, stl_path, max_height);
+        let grid = Grid::from_tiff(tiff_path).expect("Failed at creating grid");
+        let created = grid.make_boundary(stl_path, max_height);
         assert!(created.is_ok());
     }
 }
