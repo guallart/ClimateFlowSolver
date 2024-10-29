@@ -140,22 +140,3 @@ pub fn average_points(points: &[Vector]) -> Vector {
         .fold(Vector::new(0.0, 0.0, 0.0), |acc, point| acc.add(point))
         .div(points.len() as f64)
 }
-
-// pub fn compute_triangle_area(v1: &Vector, v2: &Vector, v3: &Vector) -> f64 {
-//     let u = v2.sub(&v1);
-//     let v = v3.sub(&v1);
-//     0.5 * u.cross(&v).mag()
-// }
-
-// pub fn compute_normal(v1: &Vector, v2: &Vector, v3: &Vector) -> Vector {
-//     let u = v2.sub(&v1);
-//     let v = v3.sub(&v1);
-//     let normal = u.cross(&v);
-//     let mag = normal.mag();
-
-//     Vector {
-//         x: normal.x / mag,
-//         y: normal.y / mag,
-//         z: normal.z / mag,
-//     }
-// }
