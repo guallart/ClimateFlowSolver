@@ -161,7 +161,8 @@ impl Mesh {
                     let id = (nx * ny) * k + ny * i + j;
                     let vertices = vec![v0, v1, v2, v3, v4, v5, v6, v7];
                     let center = geometry::average_points(&vertices);
-                    let volume = (v1.x - v0.x) * (v4.y - v0.y) * (v0.z - v3.z);
+                    let volume = (v1.x - v0.x) * (v4.y - v0.y) * (v3.z - v0.z);
+
                     cells[(i, j, k)] = Some(Cell {
                         id,
                         vertices,
