@@ -7,29 +7,6 @@ pub struct Vector {
     pub z: f64,
 }
 
-impl PartialEq for Vector {
-    fn eq(&self, other: &Self) -> bool {
-        const EPSILON: f64 = 1e-9;
-
-        (self.x - other.x).abs() < EPSILON
-            && (self.y - other.y).abs() < EPSILON
-            && (self.z - other.z).abs() < EPSILON
-    }
-}
-impl Eq for Vector {}
-
-impl Hash for Vector {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        let x = (self.x * 1e6).round() as i64;
-        let y = (self.y * 1e6).round() as i64;
-        let z = (self.z * 1e6).round() as i64;
-
-        x.hash(state);
-        y.hash(state);
-        z.hash(state);
-    }
-}
-
 impl Vector {
     pub fn new(x: f64, y: f64, z: f64) -> Vector {
         Vector { x, y, z }
@@ -69,6 +46,10 @@ impl Vector {
             y: self.y / d,
             z: self.z / d,
         }
+    }
+
+    pub fn dot(&self, other: &Vector) -> f64 {
+        self.x * other.x + self.y * other.y + self.z * other.z
     }
 }
 
