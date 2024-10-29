@@ -1,12 +1,11 @@
-use std::fs::File;
-use std::io::{BufWriter, Write};
-use std::path::Path;
-
 use crate::{
     boundary::Grid,
     mesh::geometry::{self, Quad, Triangle, Vector},
 };
 use ndarray::{Array2, Array3};
+use std::fs::File;
+use std::io::{BufWriter, Write};
+use std::path::Path;
 
 #[derive(Clone)]
 pub enum WallKind {
