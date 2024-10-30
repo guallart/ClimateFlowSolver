@@ -1,6 +1,8 @@
 use crate::{
     boundary::Grid,
     mesh::geometry::{self, Quad, Triangle, Vector},
+    sparse_system::sparse_matrix::SparseMatrix,
+    sparse_system::sparse_system::SparseSystem,
 };
 use ndarray::{Array2, Array3};
 use std::fs::File;
@@ -360,6 +362,41 @@ impl Mesh {
             writeln!(file, "{}", cell.id)?;
         }
 
+        // Write velocity components
+        writeln!(file, "VECTORS velocity float")?;
+        for cell in &self.cells {
+            writeln!(
+                file,
+                "{} {} {}",
+                cell.physics.velocity.x, cell.physics.velocity.y, cell.physics.velocity.z
+            )?;
+        }
+
+        // Write pressure
+        writeln!(file, "SCALARS pressure float 1")?;
+        writeln!(file, "LOOKUP_TABLE default")?;
+        for cell in &self.cells {
+            writeln!(file, "{}", cell.physics.pressure)?;
+        }
+
+        // Write temperature
+        writeln!(file, "SCALARS temperature float 1")?;
+        writeln!(file, "LOOKUP_TABLE default")?;
+        for cell in &self.cells {
+            writeln!(file, "{}", cell.physics.temperature)?;
+        }
+
+        // Write density
+        writeln!(file, "SCALARS density float 1")?;
+        writeln!(file, "LOOKUP_TABLE default")?;
+        for cell in &self.cells {
+            writeln!(file, "{}", cell.physics.density)?;
+        }
+
         Ok(())
+    }
+
+    pub fn make_system(&self) -> SparseSystem {
+        todo!();
     }
 }
