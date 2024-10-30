@@ -18,6 +18,7 @@ const GRAVITY: f64 = 9.80665;
 const AIR_MOLAR_MASS: f64 = 0.0289644;
 const PRESSURE_SEA_LEVEL: f64 = 101325.0;
 const TEMPERATURE_SEA_LEVEL: f64 = 20.0 + 273.15;
+const CALORIFIC_CAPACITY_V: f64 = 1214.0;
 
 #[derive(Clone)]
 pub enum WallKind {
@@ -77,6 +78,7 @@ pub struct Physics {
     pub pressure: f64,
     pub temperature: f64,
     pub density: f64,
+    pub energy: f64,
 }
 
 pub struct Mesh {
@@ -99,6 +101,7 @@ impl Physics {
             pressure: 0.0,
             temperature: 0.0,
             density: 0.0,
+            energy: 0.0,
         }
     }
 
@@ -116,11 +119,14 @@ impl Physics {
         let u = u_ref * (height / init_conds.z_ref).powf(init_conds.shear);
         let v = v_ref * (height / init_conds.z_ref).powf(init_conds.shear);
 
+        let energy = 0.5 * (u * u + v * v) + CALORIFIC_CAPACITY_V * temperature;
+
         Physics {
             velocity: Vector::new(u, v, 0.0),
             pressure,
             temperature,
             density,
+            energy,
         }
     }
 }
