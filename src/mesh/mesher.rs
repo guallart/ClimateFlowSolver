@@ -1,3 +1,4 @@
+use crate::math;
 use crate::{
     boundary::Grid,
     mesh::geometry::{self, Quad, Triangle, Vector},
@@ -5,9 +6,18 @@ use crate::{
     sparse_system::sparse_system::SparseSystem,
 };
 use ndarray::{Array2, Array3};
+use rayon::prelude::*;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::Path;
+
+const DENSITY_LAPSE_RATE: f64 = -0.0013;
+const TEMPERATURE_LAPSE_RATE: f64 = -0.0065;
+const UNIVERSAL_GAS_CONSTANT: f64 = 8.31432;
+const GRAVITY: f64 = 9.80665;
+const AIR_MOLAR_MASS: f64 = 0.0289644;
+const PRESSURE_SEA_LEVEL: f64 = 101325.0;
+const TEMPERATURE_SEA_LEVEL: f64 = 20.0 + 273.15;
 
 #[derive(Clone)]
 pub enum WallKind {
@@ -25,9 +35,11 @@ pub enum Poly {
 
 #[derive(Clone)]
 pub struct Wall {
-    poly: Poly,
-    kind: WallKind,
-    cells_id: [Option<usize>; 2],
+    pub poly: Poly,
+    pub kind: WallKind,
+    pub cells_id: [Option<usize>; 2],
+    pub center: Vector,
+    pub physics: Physics,
 }
 
 /*
@@ -54,13 +66,13 @@ pub struct Cell {
     pub walls: Vec<Wall>,
     pub center: Vector,
     pub neighbours: Vec<usize>,
-    pub physics: CellPhysics,
+    pub physics: Physics,
     pub ground_height: f64,
     pub volume: f64,
 }
 
 #[derive(Clone)]
-pub struct CellPhysics {
+pub struct Physics {
     pub velocity: Vector,
     pub pressure: f64,
     pub temperature: f64,
@@ -71,29 +83,67 @@ pub struct Mesh {
     pub cells: Vec<Cell>,
 }
 
-impl CellPhysics {
-    pub fn new() -> CellPhysics {
-        CellPhysics {
+pub struct InitialPhysics {
+    pub z_ref: f64,
+    pub speed_ref: f64,
+    pub density_ref: f64,
+    pub direction: f64,
+    pub shear: f64,
+    pub temperature: f64,
+}
+
+impl Physics {
+    pub fn new() -> Physics {
+        Physics {
             velocity: Vector::new(0.0, 0.0, 0.0),
             pressure: 0.0,
             temperature: 0.0,
             density: 0.0,
         }
     }
+
+    pub fn from_inital_conditions(init_conds: &InitialPhysics, height: f64) -> Physics {
+        let press_power =
+            -GRAVITY * AIR_MOLAR_MASS / (UNIVERSAL_GAS_CONSTANT * TEMPERATURE_LAPSE_RATE);
+        let delta_z = height - init_conds.z_ref;
+        let density = init_conds.density_ref * delta_z * DENSITY_LAPSE_RATE;
+        let temperature = init_conds.temperature;
+        let pressure = PRESSURE_SEA_LEVEL
+            * (1.0 + TEMPERATURE_LAPSE_RATE / TEMPERATURE_SEA_LEVEL * height).powf(press_power);
+
+        let u_ref = init_conds.speed_ref * math::as_rads(init_conds.direction).cos();
+        let v_ref = init_conds.speed_ref * math::as_rads(init_conds.direction).sin();
+        let u = u_ref * (height / init_conds.z_ref).powf(init_conds.shear);
+        let v = v_ref * (height / init_conds.z_ref).powf(init_conds.shear);
+
+        Physics {
+            velocity: Vector::new(u, v, 0.0),
+            pressure,
+            temperature,
+            density,
+        }
+    }
 }
 
 impl Wall {
     pub fn new(points: &[&Vector], kind: WallKind, cells_id: [Option<usize>; 2]) -> Wall {
+        let owned_points: Vec<Vector> = points.iter().map(|&&v| v.clone()).collect();
+        let center = geometry::average_points(&owned_points);
+
         match points {
             [v1, v2, v3] => Wall {
                 poly: Poly::Triangle(Triangle::new(v1, v2, v3)),
                 kind,
                 cells_id,
+                center,
+                physics: Physics::new(),
             },
             [v1, v2, v3, v4] => Wall {
                 poly: Poly::Quad(Quad::new(v1, v2, v3, v4)),
                 kind,
                 cells_id,
+                center,
+                physics: Physics::new(),
             },
             _ => unreachable!("Invalid number of points for a wall"),
         }
@@ -171,7 +221,7 @@ impl Mesh {
                         walls: Vec::with_capacity(6),
                         center,
                         neighbours: Vec::with_capacity(6),
-                        physics: CellPhysics::new(),
+                        physics: Physics::new(),
                         ground_height: avg_height,
                         volume,
                     });
@@ -394,6 +444,29 @@ impl Mesh {
         }
 
         Ok(())
+    }
+
+    pub fn define_initial_and_boundary_conditions(&mut self, initial_physics: InitialPhysics) {
+        self.cells.par_iter_mut().for_each(|cell| {
+            cell.physics = Physics::from_inital_conditions(&initial_physics, cell.center.z);
+
+            for wall in cell.walls.iter_mut() {
+                let mut physics = Physics::from_inital_conditions(&initial_physics, wall.center.z);
+                wall.physics = match wall.kind {
+                    WallKind::Terrain => {
+                        physics.velocity.x = 0.0;
+                        physics.velocity.y = 0.0;
+                        physics.velocity.z = 0.0;
+                        physics
+                    }
+                    WallKind::Sky => {
+                        physics.velocity.z = 0.0;
+                        physics
+                    }
+                    _ => physics,
+                }
+            }
+        })
     }
 
     pub fn make_system(&self) -> SparseSystem {
