@@ -1,9 +1,5 @@
 use core::f64;
 
-use itertools::Itertools;
-
-use crate::mesh::geometry::Vector;
-
 #[allow(unused)]
 pub fn logspace(start: f64, end: f64, num: usize) -> Vec<f64> {
     let lin_space: Vec<f64> = (0..num)
