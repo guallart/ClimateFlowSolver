@@ -53,22 +53,18 @@ impl Vector {
 
 #[derive(Clone)]
 pub struct Triangle {
+    pub center: Vector,
     pub normal: Vector,
     pub vertices: [Vector; 3],
     pub area: f64,
-    pub x: f64,
-    pub y: f64,
-    pub z: f64,
 }
 
 #[derive(Clone)]
 pub struct Quad {
+    pub center: Vector,
     pub normal: Vector,
     pub vertices: [Vector; 4],
     pub area: f64,
-    pub x: f64,
-    pub y: f64,
-    pub z: f64,
 }
 
 impl Triangle {
@@ -77,14 +73,12 @@ impl Triangle {
         let v = v3.sub(&v1);
         let normal = u.cross(&v);
         let area = 0.5 * normal.mag();
-        let Vector { x, y, z } = v1.add(&v2).add(&v3).div(3.0);
+        let center = v1.add(&v2).add(&v3).div(3.0);
         Triangle {
+            center,
             vertices: [v1.clone(), v2.clone(), v3.clone()],
             normal,
             area,
-            x,
-            y,
-            z,
         }
     }
 }
@@ -97,14 +91,12 @@ impl Quad {
         let normal1 = u.cross(&v);
         let normal2 = u.cross(&w);
         let area = 0.5 * (normal1.mag() + normal2.mag());
-        let Vector { x, y, z } = v1.add(&v2).add(&v3).add(&v4).div(4.0);
+        let center = v1.add(&v2).add(&v3).add(&v4).div(4.0);
         Quad {
+            center,
             vertices: [v1.clone(), v2.clone(), v3.clone(), v4.clone()],
             normal: normal1,
             area,
-            x,
-            y,
-            z,
         }
     }
 }
