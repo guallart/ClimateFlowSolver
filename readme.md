@@ -34,18 +34,12 @@ $$
 
 To close these equations it is also necessary to specify an equation of state. Assuming a calorically perfect gas the following relations are valid:
 
-$$
-\gamma \equiv \frac{C_p}{C_v} ~~,~~
-p = \rho R T ~~,~~
-e = C_v T ~~,~~
-C_p - C_v = R
-$$
+$$\gamma \equiv \frac{C_p}{C_v} ~~,~~p = \rho R T ~~,~~e = C_v T ~~,~~C_p - C_v = R$$
+
 Where $\gamma$, $C_p$, $C_v$ and R are constant.
 The total energy $e_0$ is defined by: 
 
-$$
-e_0 \equiv e + \frac{u_k u_k}{2}
-$$
+$$e_0 \equiv e + \frac{u_k u_k}{2}$$
 
 # Schemes
 
