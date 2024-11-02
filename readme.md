@@ -3,19 +3,16 @@ The instantaneous continuity equation, momentum equation and energy equation for
 
 $$
 \frac{\partial \rho}{\partial t} +
-\frac{\partial}{\partial x_j}\left[ \rho u_j \right] = 0
+\nabla \cdot ( \rho \boldsymbol{u} ) = 0
 $$
 
 $$
-\frac{\partial}{\partial t}\left( \rho u_i \right) +
-\frac{\partial}{\partial x_j}
-\left[ \rho u_i u_j + p \delta_{ij} - \tau_{ji} \right] = 0, \quad i=1,2,3
+\frac{\partial}{\partial t}\left( \rho \boldsymbol{u} \right) +
+\nabla \cdot (\rho \boldsymbol{u} \otimes \boldsymbol{u}) + \nabla p  + \nabla \cdot \boldsymbol{\tau} + \rho \boldsymbol{g}= 0
 $$
 
 $$
-\frac{\partial}{\partial t}\left( \rho e_0 \right) +
-\frac{\partial}{\partial x_j}
-\left[ \rho u_j e_0 + u_j p - u_i \tau_{ij} \right] = 0
+\frac{\partial}{\partial t}(\rho e_0) + \nabla \cdot (\rho e_0 \boldsymbol{u}) + \nabla \cdot (p \boldsymbol{u}) + \nabla \cdot (k \nabla T) + \Phi
 $$
 
 For a Newtonian fluid, assuming Stokes Law for mono-atomic gases, the viscous stress is given by: 
