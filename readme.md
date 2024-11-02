@@ -25,6 +25,7 @@ $$
 $$
 
 Where the trace-less viscous strain-rate is defined by: 
+
 $$S_{ij}^* \equiv \frac{1}{2} \left(\frac{\partial u_i}{\partial x_j} + \frac{\partial u_j}{\partial x_i} \right) - \frac{1}{3} \frac{\partial u_k}{\partial x_k} \delta_{ij}$$
 
 To close these equations it is also necessary to specify an equation of state. Assuming a calorically perfect gas the following relations are valid:
