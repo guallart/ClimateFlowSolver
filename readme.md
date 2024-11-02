@@ -40,11 +40,15 @@ $$e_0 \equiv e + \frac{u_k u_k}{2}$$
 # Schemes
 
 - **Cell volume calculation**: using divergence theorem the cell volume [can be computed](https://www.youtube.com/watch?v=x2CsJUE8bZo&list=PLnJ8lIgfDbkp5DtCPtP2rcqEEUJk-PM8N&index=3) as: 
+  
   $$V_P = \sum_{\text{faces}} \frac{1}{2} (\boldsymbol{x}_f \cdot \hat{\boldsymbol{n}}) A_f$$
+
   where $\boldsymbol{x}_f$ is measured from the cell centroid of the cell, not the global origin.
 
 - **Gradient scheme**: [least squares](https://www.youtube.com/watch?v=7ymFkxx2R_k&list=PLnJ8lIgfDbkp5DtCPtP2rcqEEUJk-PM8N&index=4)
+  
   $$\int_V  \nabla p \, dV \approx G^{-1} \boldsymbol{d}^T (p_N - p_P); \hspace{1cm} G = \boldsymbol{d}^T \boldsymbol{d} ; \hspace{1cm} \boldsymbol{d} = \boldsymbol{d}_N-\boldsymbol{d}_P$$
+
   with $P$ refereing to the current cell and $N$ to the neighbourning cell. $G$ can be computed only once at the beginning.
   Can be extended with a weight on each calculation for better performance. This is specially useful on thin cells.
 
