@@ -43,7 +43,7 @@ $$e_0 \equiv e + \frac{u_k u_k}{2}$$
   where $\boldsymbol{x}_f$ is measured from the cell centroid of the cell, not the global origin.
 
 - **Convection term**:
-  $$\int_V [\nabla \cdot \boldsymbol{u}\boldsymbol{u}] \, \mathrm{d} V \approx \sum_\text{faces} \boldsymbol{u_f} (\boldsymbol{u_f} \cdot \hat{\boldsymbol{n}}) S_f$$
+  $$\int_V \nabla \cdot (\rho \boldsymbol{u} \otimes \boldsymbol{u}) \, \mathrm{d} V \approx \sum_\text{faces} \rho_f \boldsymbol{u_f} (\boldsymbol{u_f} \cdot \hat{\boldsymbol{n}}) S_f$$
 
 - **Gradient scheme**: [least squares](https://www.youtube.com/watch?v=7ymFkxx2R_k&list=PLnJ8lIgfDbkp5DtCPtP2rcqEEUJk-PM8N&index=4)
   
